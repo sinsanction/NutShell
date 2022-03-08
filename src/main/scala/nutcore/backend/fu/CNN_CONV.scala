@@ -271,8 +271,8 @@ class CNN_CONV_SUB25 extends Module {
   val c_3_reg = RegEnable(c_3, part2_valid)
   val c_4_reg = RegEnable(c_4, part2_valid)
 
-  val res_int8 := s_1_reg + s_2_reg + s_3_reg + s_4_reg + c_1_reg + c_2_reg + c_3_reg + c_4_reg
-  val res_int4 := s_1_reg + s_2_reg + c_1_reg + c_2_reg
+  val res_int8 = s_1_reg + s_2_reg + s_3_reg + s_4_reg + c_1_reg + c_2_reg + c_3_reg + c_4_reg
+  val res_int4 = s_1_reg + s_2_reg + c_1_reg + c_2_reg
 
   val res_final_18 = Wire(UInt(18.W))
   when (state) {

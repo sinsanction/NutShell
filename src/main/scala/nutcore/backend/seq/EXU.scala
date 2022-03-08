@@ -51,9 +51,18 @@ class EXU(implicit val p: NutCoreConfig) extends NutCoreModule {
 
   def isBru(func: UInt) = func(4)
 
+  // CNN FU
+  val cnnfu = Module(new CNNFU)
+
+  val lsu_valid = Mux(fuValids(FuType.cnn), cnnfu.io.loadv.valid, fuValids(FuType.lsu))
+  val lsu_src1 = Mux(fuValids(FuType.cnn), cnnfu.io.loadv.src1, src1)
+  val lsu_src2 = Mux(fuValids(FuType.cnn), cnnfu.io.loadv.src2, io.in.bits.data.imm)
+  val lsu_func = Mux(fuValids(FuType.cnn), cnnfu.io.loadv.func, fuOpType)
+
   val lsu = Module(new UnpipelinedLSU)
   val lsuTlbPF = WireInit(false.B)
-  val lsuOut = lsu.access(valid = fuValids(FuType.lsu), src1 = src1, src2 = io.in.bits.data.imm, func = fuOpType, dtlbPF = lsuTlbPF)
+  //val lsuOut = lsu.access(valid = fuValids(FuType.lsu), src1 = src1, src2 = io.in.bits.data.imm, func = fuOpType, dtlbPF = lsuTlbPF)
+  val lsuOut = lsu.access(valid = lsu_valid, src1 = lsu_src1, src2 = lsu_src2, func = lsu_func, dtlbPF = lsuTlbPF)
   lsu.io.wdata := src2
   lsu.io.instr := io.in.bits.cf.instr
   io.out.bits.isMMIO := lsu.io.isMMIO || (AddressSpace.isMMIO(io.in.bits.cf.pc) && io.out.valid)
@@ -105,7 +114,8 @@ class EXU(implicit val p: NutCoreConfig) extends NutCoreModule {
   // FIXME: should handle io.out.ready == false
   io.out.valid := io.in.valid && MuxLookup(fuType, true.B, List(
     FuType.lsu -> lsu.io.out.valid,
-    FuType.mdu -> mdu.io.out.valid
+    FuType.mdu -> mdu.io.out.valid,
+    FuType.cnn -> cnnfu.io.out.valid
   ))
 
   io.out.bits.commits(FuType.alu) := aluOut
@@ -113,6 +123,7 @@ class EXU(implicit val p: NutCoreConfig) extends NutCoreModule {
   io.out.bits.commits(FuType.csr) := csrOut
   io.out.bits.commits(FuType.mdu) := mduOut
   io.out.bits.commits(FuType.mou) := 0.U
+  io.out.bits.commits(FuType.cnn) := cnnOut
 
   io.in.ready := !io.in.valid || io.out.fire()
 

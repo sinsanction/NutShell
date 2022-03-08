@@ -12,7 +12,7 @@ object MAX2 {
   }
 }
 
-class CNN_VECTOR_REGFILE_IO(length: Int) extends Bundle {
+class CNN_VECTOR_REGFILE_IO extends Bundle {
   val vaddr = Input(UInt(5.W))
   val vtag = Input(UInt(3.W))
   val vop = Input(UInt(3.W))   //100: load-v.d  010: load-v.p  001: load-v.width

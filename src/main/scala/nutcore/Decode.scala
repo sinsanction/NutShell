@@ -54,7 +54,7 @@ object SrcType {
 }
 
 object FuType extends HasNutCoreConst {
-  def num = 5
+  def num = 6
   def alu = "b000".U
   def lsu = "b001".U
   def mdu = "b010".U
@@ -62,6 +62,7 @@ object FuType extends HasNutCoreConst {
   def mou = "b100".U
   def bru = if(IndependentBru) "b101".U
             else               alu
+  def cnn = "b101".U
   def apply() = UInt(log2Up(num).W)
 }
 
@@ -75,6 +76,7 @@ object Instructions extends HasInstrType with HasNutCoreParameter {
   def DecodeTable = RVIInstr.table ++ NutCoreTrap.table ++
     (if (HasMExtension) RVMInstr.table else Nil) ++
     (if (HasCExtension) RVCInstr.table else Nil) ++
+    (if (HasCNNExtension) RVCNNInstr.table else Nil) ++
     Priviledged.table ++
     RVAInstr.table ++
     RVZicsrInstr.table ++ RVZifenceiInstr.table

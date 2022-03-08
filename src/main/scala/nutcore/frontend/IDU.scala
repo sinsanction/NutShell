@@ -141,6 +141,18 @@ class Decoder(implicit val p: NutCoreConfig) extends NutCoreModule with HasInstr
   io.out.bits.ctrl.src1Type := Mux(instr(6,0) === "b0110111".U, SrcType.reg, src1Type)
   io.out.bits.ctrl.src2Type := src2Type
 
+  // RV-CNN
+  when (fuType === FuType.cnn) {
+    def isLoadV(func3 : UInt): Bool = ~func3(2)
+    val func3 = instr(14,12)
+    when (isLoadV(func3)) {
+      io.out.bits.ctrl.rfWen   := false.B
+    }
+  }
+  io.out.bits.ctrl.vtag      := instr(26,24)
+  io.out.bits.ctrl.length_k  := instr(23,20)
+  io.out.bits.ctrl.algorithm := instr(15)
+
   val NoSpecList = Seq(
     FuType.csr
   )

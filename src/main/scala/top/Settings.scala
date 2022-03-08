@@ -39,7 +39,8 @@ object DefaultSettings {
     "FPGAPlatform" -> false,
     "EnableILA" -> true,
     "EnableDebug" -> true,
-    "EnableRVC" -> true
+    "EnableRVC" -> true,
+    "EnableRVCNN" -> true
   )
 }
 
@@ -72,7 +73,8 @@ object PXIeSettings {
 object OOOSettings {
   def apply() = Map(
     "EnableMultiIssue" -> true,
-    "EnableOutOfOrderExec" -> true
+    "EnableOutOfOrderExec" -> true,
+    "EnableRVCNN" -> false
   )
 }
 
@@ -90,7 +92,8 @@ object EmbededSettings {
     "HasIcache" -> false,
     "MmodeOnly" -> true,
     "IsRV32" -> true,
-    "EnableRVC" -> false
+    "EnableRVC" -> false,
+    "EnableRVCNN" -> false
   )
 }
 
