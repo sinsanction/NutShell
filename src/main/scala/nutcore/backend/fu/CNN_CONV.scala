@@ -175,14 +175,15 @@ class Wallace_Adder extends Module {
 
   val wallace_in = Wire(Vec(18, UInt(25.W)))
   val wallace_cin = Wire(UInt(24.W))
-  wallace_cin := io.cin.reduce{ (a, b) => Cat(b, a) }
+  wallace_cin := (io.cin.reduce{ (a, b) => Cat(b, a) })(23,0)
   for(i <- 0 until 18) {
     wallace_in(i) := io.data.reduce{ (a, b) => Cat(b(i), a(i)) }
   }
 
-  val wallace_tree = Vec(18, Module(new Wallace_Tree_25).io)
+  //val wallace_tree = Vec(18, Module(new Wallace_Tree_25).io)
   val out_s = Wire(Vec(18, UInt(1.W)))
   val out_c = Wire(Vec(18, UInt(1.W)))
+  /*
   for(i <- 0 until 18) {
     if (i == 0) {
         wallace_tree(i).n := wallace_in(i)
@@ -197,6 +198,115 @@ class Wallace_Adder extends Module {
         out_c(i) := wallace_tree(i-1).c
     }
   }
+  */
+  val wallace_tree_00 = Module(new Wallace_Tree_25)
+  wallace_tree_00.io.n   := wallace_in(0)
+  wallace_tree_00.io.cin := wallace_cin
+  out_s(0) := wallace_tree_00.io.s
+  out_c(0) := io.cin(24)
+
+  val wallace_tree_01 = Module(new Wallace_Tree_25)
+  wallace_tree_01.io.n   := wallace_in(1)
+  wallace_tree_01.io.cin := wallace_tree_00.io.cout
+  out_s(1) := wallace_tree_01.io.s
+  out_c(1) := wallace_tree_00.io.c
+
+  val wallace_tree_02 = Module(new Wallace_Tree_25)
+  wallace_tree_02.io.n   := wallace_in(2)
+  wallace_tree_02.io.cin := wallace_tree_01.io.cout
+  out_s(2) := wallace_tree_02.io.s
+  out_c(2) := wallace_tree_01.io.c
+
+  val wallace_tree_03 = Module(new Wallace_Tree_25)
+  wallace_tree_03.io.n   := wallace_in(3)
+  wallace_tree_03.io.cin := wallace_tree_02.io.cout
+  out_s(3) := wallace_tree_03.io.s
+  out_c(3) := wallace_tree_02.io.c
+
+  val wallace_tree_04 = Module(new Wallace_Tree_25)
+  wallace_tree_04.io.n   := wallace_in(4)
+  wallace_tree_04.io.cin := wallace_tree_03.io.cout
+  out_s(4) := wallace_tree_04.io.s
+  out_c(4) := wallace_tree_03.io.c
+
+  val wallace_tree_05 = Module(new Wallace_Tree_25)
+  wallace_tree_05.io.n   := wallace_in(5)
+  wallace_tree_05.io.cin := wallace_tree_04.io.cout
+  out_s(5) := wallace_tree_05.io.s
+  out_c(5) := wallace_tree_04.io.c
+
+  val wallace_tree_06 = Module(new Wallace_Tree_25)
+  wallace_tree_06.io.n   := wallace_in(6)
+  wallace_tree_06.io.cin := wallace_tree_05.io.cout
+  out_s(6) := wallace_tree_06.io.s
+  out_c(6) := wallace_tree_05.io.c
+
+  val wallace_tree_07 = Module(new Wallace_Tree_25)
+  wallace_tree_07.io.n   := wallace_in(7)
+  wallace_tree_07.io.cin := wallace_tree_06.io.cout
+  out_s(7) := wallace_tree_07.io.s
+  out_c(7) := wallace_tree_06.io.c
+
+  val wallace_tree_08 = Module(new Wallace_Tree_25)
+  wallace_tree_08.io.n   := wallace_in(8)
+  wallace_tree_08.io.cin := wallace_tree_07.io.cout
+  out_s(8) := wallace_tree_08.io.s
+  out_c(8) := wallace_tree_07.io.c
+
+  val wallace_tree_09 = Module(new Wallace_Tree_25)
+  wallace_tree_09.io.n   := wallace_in(9)
+  wallace_tree_09.io.cin := wallace_tree_08.io.cout
+  out_s(9) := wallace_tree_09.io.s
+  out_c(9) := wallace_tree_08.io.c
+
+  val wallace_tree_10 = Module(new Wallace_Tree_25)
+  wallace_tree_10.io.n   := wallace_in(10)
+  wallace_tree_10.io.cin := wallace_tree_09.io.cout
+  out_s(10) := wallace_tree_10.io.s
+  out_c(10) := wallace_tree_09.io.c
+
+  val wallace_tree_11 = Module(new Wallace_Tree_25)
+  wallace_tree_11.io.n   := wallace_in(11)
+  wallace_tree_11.io.cin := wallace_tree_10.io.cout
+  out_s(11) := wallace_tree_11.io.s
+  out_c(11) := wallace_tree_10.io.c
+
+  val wallace_tree_12 = Module(new Wallace_Tree_25)
+  wallace_tree_12.io.n   := wallace_in(12)
+  wallace_tree_12.io.cin := wallace_tree_11.io.cout
+  out_s(12) := wallace_tree_12.io.s
+  out_c(12) := wallace_tree_11.io.c
+
+  val wallace_tree_13 = Module(new Wallace_Tree_25)
+  wallace_tree_13.io.n   := wallace_in(13)
+  wallace_tree_13.io.cin := wallace_tree_12.io.cout
+  out_s(13) := wallace_tree_13.io.s
+  out_c(13) := wallace_tree_12.io.c
+
+  val wallace_tree_14 = Module(new Wallace_Tree_25)
+  wallace_tree_14.io.n   := wallace_in(14)
+  wallace_tree_14.io.cin := wallace_tree_13.io.cout
+  out_s(14) := wallace_tree_14.io.s
+  out_c(14) := wallace_tree_13.io.c
+
+  val wallace_tree_15 = Module(new Wallace_Tree_25)
+  wallace_tree_15.io.n   := wallace_in(15)
+  wallace_tree_15.io.cin := wallace_tree_14.io.cout
+  out_s(15) := wallace_tree_15.io.s
+  out_c(15) := wallace_tree_14.io.c
+
+  val wallace_tree_16 = Module(new Wallace_Tree_25)
+  wallace_tree_16.io.n   := wallace_in(16)
+  wallace_tree_16.io.cin := wallace_tree_15.io.cout
+  out_s(16) := wallace_tree_16.io.s
+  out_c(16) := wallace_tree_15.io.c
+
+  val wallace_tree_17 = Module(new Wallace_Tree_25)
+  wallace_tree_17.io.n   := wallace_in(17)
+  wallace_tree_17.io.cin := wallace_tree_16.io.cout
+  out_s(17) := wallace_tree_17.io.s
+  out_c(17) := wallace_tree_16.io.c
+
   io.s := out_s.reduce{ (a, b) => Cat(b, a) }
   io.c := out_c.reduce{ (a, b) => Cat(b, a) }
 }
