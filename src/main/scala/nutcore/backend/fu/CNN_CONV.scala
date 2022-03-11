@@ -101,14 +101,15 @@ object ADDER_HALF_COUT {
 class Wallace_Tree_25 extends Module {
   val io = IO(new Bundle {
     val n = Input(UInt(25.W))
-    val cin = Input(UInt(24.W))
+    val cin = Input(Vec(24, UInt(1.W)))
     val s = Output(UInt(1.W))
     val c = Output(UInt(1.W))
-    val cout = Output(UInt(24.W))
+    val cout = Output(Vec(24, UInt(1.W)))
   })
 
+
   //layer1: 8 full adder
-  val ly1_out = Wire(UInt(8.W))
+  val ly1_out = Wire(Vec(8, UInt(1.W)))
   for(i <- 0 until 8) {
     ly1_out(i) := ADDER_FULL_S( io.n(3*i), io.n(3*i+1), io.n(3*i+2) )
     io.cout(i) := ADDER_FULL_COUT( io.n(3*i), io.n(3*i+1), io.n(3*i+2) )
@@ -116,7 +117,7 @@ class Wallace_Tree_25 extends Module {
 
   //layer2: 5 full adder + 1 half adder
   val ly2_in = Cat( ly1_out, Cat( io.cin(7, 0), io.n(24) ) )  //17 bit
-  val ly2_out = Wire(UInt(6.W))
+  val ly2_out = Wire(Vec(6, UInt(1.W)))
   for(i <- 0 until 5) {
     ly2_out(i) := ADDER_FULL_S( ly2_in(3*i), ly2_in(3*i+1), ly2_in(3*i+2) )
     io.cout(i+8) := ADDER_FULL_COUT( ly2_in(3*i), ly2_in(3*i+1), ly2_in(3*i+2) )
@@ -126,7 +127,7 @@ class Wallace_Tree_25 extends Module {
 
   //layer3: 4 full adder
   val ly3_in = Cat( ly2_out, io.cin(13, 8) )  //12 bit
-  val ly3_out = Wire(UInt(4.W))
+  val ly3_out = Wire(Vec(4, UInt(1.W)))
   for(i <- 0 until 4) {
     ly3_out(i) := ADDER_FULL_S( ly3_in(3*i), ly3_in(3*i+1), ly3_in(3*i+2) )
     io.cout(i+14) := ADDER_FULL_COUT( ly3_in(3*i), ly3_in(3*i+1), ly3_in(3*i+2) )
@@ -144,7 +145,7 @@ class Wallace_Tree_25 extends Module {
 
   //layer5: 2 full adder
   val ly5_in = Cat( ly4_out, io.cin(20, 18) )  //6 bit
-  val ly5_out = Wire(UInt(2.W))
+  val ly5_out = Wire(Vec(2, UInt(1.W)))
   for(i <- 0 until 2) {
     ly5_out(i) := ADDER_FULL_S( ly5_in(3*i), ly5_in(3*i+1), ly5_in(3*i+2) )
     io.cout(i+21) := ADDER_FULL_COUT( ly5_in(3*i), ly5_in(3*i+1), ly5_in(3*i+2) )
@@ -172,27 +173,31 @@ class Wallace_Adder extends Module {
   })
 
   val wallace_in = Wire(Vec(18, UInt(25.W)))
-  val wallace_cin = Wire(UInt(24.W))
-  wallace_cin := io.cin.reduce{ (a, b) => Cat(b, a) }
+  //val wallace_cin = Wire(UInt(24.W))
+  //wallace_cin := io.cin.reduce{ (a, b) => Cat(b, a) }
   for(i <- 0 until 18) {
     wallace_in(i) := io.data.reduce{ (a, b) => Cat(b(i), a(i)) }
   }
 
   val wallace_tree = Vec(18, Module(new Wallace_Tree_25).io)
+  val out_s = Wire(Vec(18, UInt(1.W)))
+  val out_c = Wire(Vec(18, UInt(1.W)))
   for(i <- 0 until 18) {
     if (i == 0) {
         wallace_tree(i).n := wallace_in(i)
-        wallace_tree(i).cin := wallace_cin
-        io.s(i) := wallace_tree(i).s
-        io.c(i) := io.cin(24)
+        wallace_tree(i).cin := io.cin
+        out_s(i) := wallace_tree(i).s
+        out_c(i) := io.cin(24)
     }
     else {
         wallace_tree(i).n := wallace_in(i)
         wallace_tree(i).cin := wallace_tree(i-1).cout
-        io.s(i) := wallace_tree(i).s
-        io.c(i) := wallace_tree(i-1).c
+        out_s(i) := wallace_tree(i).s
+        out_c(i) := wallace_tree(i-1).c
     }
   }
+  io.s := out_s.reduce{ (a, b) => Cat(b, a) }
+  io.c := out_c.reduce{ (a, b) => Cat(b, a) }
 }
 
 class CNN_CONV_SUB25 extends Module {
