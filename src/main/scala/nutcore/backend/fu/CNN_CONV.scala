@@ -135,7 +135,7 @@ class Wallace_Tree_25 extends Module {
 
   //layer4: 2 full adder + 1 half adder
   val ly4_in = Cat( ly3_out.reduce{ (a, b) => Cat(b, a) }, io.cin(17, 14) )  //8 bit
-  val ly4_out = Wire(UInt(3.W))
+  val ly4_out = Wire(Vec(3, UInt(1.W)))
   for(i <- 0 until 2) {
     ly4_out(i) := ADDER_FULL_S( ly4_in(3*i), ly4_in(3*i+1), ly4_in(3*i+2) )
     out_cout(i+18) := ADDER_FULL_COUT( ly4_in(3*i), ly4_in(3*i+1), ly4_in(3*i+2) )
