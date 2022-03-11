@@ -101,67 +101,68 @@ object ADDER_HALF_COUT {
 class Wallace_Tree_25 extends Module {
   val io = IO(new Bundle {
     val n = Input(UInt(25.W))
-    val cin = Input(Vec(24, UInt(1.W)))
+    val cin = Input(UInt(24.W))
     val s = Output(UInt(1.W))
     val c = Output(UInt(1.W))
-    val cout = Output(Vec(24, UInt(1.W)))
+    val cout = Output(UInt(24.W))
   })
-
+  val out_cout = Wire(Vec(24, UInt(1.W)))
 
   //layer1: 8 full adder
   val ly1_out = Wire(Vec(8, UInt(1.W)))
   for(i <- 0 until 8) {
     ly1_out(i) := ADDER_FULL_S( io.n(3*i), io.n(3*i+1), io.n(3*i+2) )
-    io.cout(i) := ADDER_FULL_COUT( io.n(3*i), io.n(3*i+1), io.n(3*i+2) )
+    out_cout(i) := ADDER_FULL_COUT( io.n(3*i), io.n(3*i+1), io.n(3*i+2) )
   }
 
   //layer2: 5 full adder + 1 half adder
-  val ly2_in = Cat( ly1_out, Cat( io.cin(7, 0), io.n(24) ) )  //17 bit
+  val ly2_in = Cat( ly1_out.reduce{ (a, b) => Cat(b, a) }, Cat( io.cin(7, 0), io.n(24) ) )  //17 bit
   val ly2_out = Wire(Vec(6, UInt(1.W)))
   for(i <- 0 until 5) {
     ly2_out(i) := ADDER_FULL_S( ly2_in(3*i), ly2_in(3*i+1), ly2_in(3*i+2) )
-    io.cout(i+8) := ADDER_FULL_COUT( ly2_in(3*i), ly2_in(3*i+1), ly2_in(3*i+2) )
+    out_cout(i+8) := ADDER_FULL_COUT( ly2_in(3*i), ly2_in(3*i+1), ly2_in(3*i+2) )
   }
   ly2_out(5) := ADDER_HALF_S( ly2_in(15), ly2_in(16) )
-  io.cout(13) := ADDER_HALF_COUT( ly2_in(15), ly2_in(16) )
+  out_cout(13) := ADDER_HALF_COUT( ly2_in(15), ly2_in(16) )
 
   //layer3: 4 full adder
-  val ly3_in = Cat( ly2_out, io.cin(13, 8) )  //12 bit
+  val ly3_in = Cat( ly2_out.reduce{ (a, b) => Cat(b, a) }, io.cin(13, 8) )  //12 bit
   val ly3_out = Wire(Vec(4, UInt(1.W)))
   for(i <- 0 until 4) {
     ly3_out(i) := ADDER_FULL_S( ly3_in(3*i), ly3_in(3*i+1), ly3_in(3*i+2) )
-    io.cout(i+14) := ADDER_FULL_COUT( ly3_in(3*i), ly3_in(3*i+1), ly3_in(3*i+2) )
+    out_cout(i+14) := ADDER_FULL_COUT( ly3_in(3*i), ly3_in(3*i+1), ly3_in(3*i+2) )
   }
 
   //layer4: 2 full adder + 1 half adder
-  val ly4_in = Cat( ly3_out, io.cin(17, 14) )  //8 bit
+  val ly4_in = Cat( ly3_out.reduce{ (a, b) => Cat(b, a) }, io.cin(17, 14) )  //8 bit
   val ly4_out = Wire(UInt(3.W))
   for(i <- 0 until 2) {
     ly4_out(i) := ADDER_FULL_S( ly4_in(3*i), ly4_in(3*i+1), ly4_in(3*i+2) )
-    io.cout(i+18) := ADDER_FULL_COUT( ly4_in(3*i), ly4_in(3*i+1), ly4_in(3*i+2) )
+    out_cout(i+18) := ADDER_FULL_COUT( ly4_in(3*i), ly4_in(3*i+1), ly4_in(3*i+2) )
   }
   ly4_out(2) := ADDER_HALF_S( ly4_in(6), ly4_in(7) )
-  io.cout(20) := ADDER_HALF_COUT( ly4_in(6), ly4_in(7) )
+  out_cout(20) := ADDER_HALF_COUT( ly4_in(6), ly4_in(7) )
 
   //layer5: 2 full adder
-  val ly5_in = Cat( ly4_out, io.cin(20, 18) )  //6 bit
+  val ly5_in = Cat( ly4_out.reduce{ (a, b) => Cat(b, a) }, io.cin(20, 18) )  //6 bit
   val ly5_out = Wire(Vec(2, UInt(1.W)))
   for(i <- 0 until 2) {
     ly5_out(i) := ADDER_FULL_S( ly5_in(3*i), ly5_in(3*i+1), ly5_in(3*i+2) )
-    io.cout(i+21) := ADDER_FULL_COUT( ly5_in(3*i), ly5_in(3*i+1), ly5_in(3*i+2) )
+    out_cout(i+21) := ADDER_FULL_COUT( ly5_in(3*i), ly5_in(3*i+1), ly5_in(3*i+2) )
   }
 
   //layer6: 1 full adder
-  val ly6_in = Cat( ly5_out, io.cin(21) )  //3 bit
+  val ly6_in = Cat( ly5_out.reduce{ (a, b) => Cat(b, a) }, io.cin(21) )  //3 bit
   val ly6_out = Wire(UInt(1.W))
   ly6_out := ADDER_FULL_S( ly6_in(0), ly6_in(1), ly6_in(2) )
-  io.cout(23) := ADDER_FULL_COUT( ly6_in(0), ly6_in(1), ly6_in(2) )
+  out_cout(23) := ADDER_FULL_COUT( ly6_in(0), ly6_in(1), ly6_in(2) )
 
   //layer7: 1 full adder
   val ly7_in = Cat( ly6_out, io.cin(23, 22) )  //3 bit
 
   io.s := ADDER_FULL_S( ly7_in(0), ly7_in(1), ly7_in(2) )
   io.c := ADDER_FULL_COUT( ly7_in(0), ly7_in(1), ly7_in(2) )
+  io.cout := out_cout.reduce{ (a, b) => Cat(b, a) }
 }
 
 class Wallace_Adder extends Module {
@@ -173,8 +174,8 @@ class Wallace_Adder extends Module {
   })
 
   val wallace_in = Wire(Vec(18, UInt(25.W)))
-  //val wallace_cin = Wire(UInt(24.W))
-  //wallace_cin := io.cin.reduce{ (a, b) => Cat(b, a) }
+  val wallace_cin = Wire(UInt(24.W))
+  wallace_cin := io.cin.reduce{ (a, b) => Cat(b, a) }
   for(i <- 0 until 18) {
     wallace_in(i) := io.data.reduce{ (a, b) => Cat(b(i), a(i)) }
   }
@@ -185,7 +186,7 @@ class Wallace_Adder extends Module {
   for(i <- 0 until 18) {
     if (i == 0) {
         wallace_tree(i).n := wallace_in(i)
-        wallace_tree(i).cin := io.cin
+        wallace_tree(i).cin := wallace_cin
         out_s(i) := wallace_tree(i).s
         out_c(i) := io.cin(24)
     }
