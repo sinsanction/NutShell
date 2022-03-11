@@ -20,7 +20,7 @@ class CNN_ACT_SUB(group: Int, width: Int) extends Module {
   val io = IO(new Bundle {
     val in_data = Input(Vec(group, UInt(width.W)))
     val in_zero = Input(Vec(group, UInt(width.W)))
-    val res = Input(Vec(group, UInt(width.W)))
+    val res = Output(Vec(group, UInt(width.W)))
   })
   
   for(i <- 0 until group) {
