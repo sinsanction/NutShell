@@ -26,7 +26,7 @@ class CNN_POOL_AVG(length: Int) extends Module {
   sum := io.data_main.reduce(_ +& _)
   
   io.data_res := 0.U
-  switch (k) {
+  switch (io.k) {
     is( 1.U ) {
       io.data_res := sum(15, 0)
     }

@@ -36,7 +36,7 @@ class CtrlSignalIO extends NutCoreBundle {
   // for RV-CNN
   val vtag = Output(UInt(3.W))
   val length_k = Output(UInt(4.W))
-  val algorithm = Output(UInt(1.W))
+  val algorithm = Output(UInt(2.W))
 }
 
 class DataSrcIO extends NutCoreBundle {

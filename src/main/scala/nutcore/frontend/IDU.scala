@@ -151,7 +151,7 @@ class Decoder(implicit val p: NutCoreConfig) extends NutCoreModule with HasInstr
   }
   io.out.bits.ctrl.vtag      := instr(26,24)
   io.out.bits.ctrl.length_k  := instr(23,20)
-  io.out.bits.ctrl.algorithm := instr(15)
+  io.out.bits.ctrl.algorithm := instr(16,15)
 
   val NoSpecList = Seq(
     FuType.csr

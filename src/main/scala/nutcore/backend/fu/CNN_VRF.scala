@@ -18,13 +18,15 @@ class CNN_VECTOR_REGFILE_IO extends Bundle {
   val vop = Input(UInt(3.W))   //100: load-v.d  010: load-v.p  001: load-v.width
   val k = Input(UInt(4.W))
   val vwen = Input(Bool())
-  val load_data = Input(UInt(16*5.W))
+  val load_data = Input(UInt((16*5).W))
+  val load_kernel = Input(UInt((8*5).W))
   val load_vwidth = Input(UInt(64.W))
 
   val data_main = Output(Vec(25, UInt(16.W)))
   val data_kernel = Output(Vec(25, UInt(8.W)))
   val data_main_vwidth = Output(UInt(4.W))
   val data_kernel_vwidth = Output(UInt(4.W))
+  val select_vwidth = Output(UInt(8.W))
   val act_vwidth = Output(UInt(4.W))
 }
 
@@ -32,8 +34,8 @@ class CNN_VECTOR_REGFILE extends NutCoreModule {
   val io = IO(new CNN_VECTOR_REGFILE_IO)
 
   //vector reg
-  val vrf_main = Mem(5, UInt(16*5.W))
-  val vrf_kernel = Mem(5, UInt(8*5.W))
+  val vrf_main = Mem(5, UInt((16*5).W))
+  val vrf_kernel = Mem(5, UInt((8*5).W))
   
   //local vwidth reg
   val vwidth_main = Mem(5, UInt(4.W))
@@ -42,6 +44,7 @@ class CNN_VECTOR_REGFILE extends NutCoreModule {
   //vwidth reg
   val global_vwidth = Mem(8, UInt(8.W))
   val select_vw = global_vwidth(io.vtag)
+  io.select_vwidth := select_vw
   io.act_vwidth := global_vwidth(0)(7, 4)
   when (io.vwen && io.vop === 1.U) {
       global_vwidth(0) := io.load_vwidth(7, 0)
@@ -63,7 +66,7 @@ class CNN_VECTOR_REGFILE extends NutCoreModule {
           vrf_main(vindex) := io.load_data
           vwidth_main(vindex) := select_vw(7, 4)
       }.otherwise {
-          vrf_kernel(vindex) := io.load_data(39, 0)
+          vrf_kernel(vindex) := io.load_kernel
           vwidth_kernel(vindex) := select_vw(3, 0)
       }
   }.elsewhen (io.vwen && io.vop === 2.U) {
@@ -111,16 +114,16 @@ class CNN_VECTOR_REGFILE extends NutCoreModule {
 
   // vrf read
   val vrf_main_0 = vrf_main(0)
-  val vrf_main_1 = Mux(io.k >= 2.U, vrf_main(1), 0.U(16*5.W))
-  val vrf_main_2 = Mux(io.k >= 3.U, vrf_main(2), 0.U(16*5.W))
-  val vrf_main_3 = Mux(io.k >= 4.U, vrf_main(3), 0.U(16*5.W))
-  val vrf_main_4 = Mux(io.k >= 5.U, vrf_main(4), 0.U(16*5.W))
+  val vrf_main_1 = Mux(io.k >= 2.U, vrf_main(1), 0.U((16*5).W))
+  val vrf_main_2 = Mux(io.k >= 3.U, vrf_main(2), 0.U((16*5).W))
+  val vrf_main_3 = Mux(io.k >= 4.U, vrf_main(3), 0.U((16*5).W))
+  val vrf_main_4 = Mux(io.k >= 5.U, vrf_main(4), 0.U((16*5).W))
 
   val vrf_kernel_0 = vrf_kernel(0)
-  val vrf_kernel_1 = Mux(io.k >= 2.U, vrf_kernel(1), 0.U(8*5.W))
-  val vrf_kernel_2 = Mux(io.k >= 3.U, vrf_kernel(2), 0.U(8*5.W))
-  val vrf_kernel_3 = Mux(io.k >= 4.U, vrf_kernel(3), 0.U(8*5.W))
-  val vrf_kernel_4 = Mux(io.k >= 5.U, vrf_kernel(4), 0.U(8*5.W))
+  val vrf_kernel_1 = Mux(io.k >= 2.U, vrf_kernel(1), 0.U((8*5).W))
+  val vrf_kernel_2 = Mux(io.k >= 3.U, vrf_kernel(2), 0.U((8*5).W))
+  val vrf_kernel_3 = Mux(io.k >= 4.U, vrf_kernel(3), 0.U((8*5).W))
+  val vrf_kernel_4 = Mux(io.k >= 5.U, vrf_kernel(4), 0.U((8*5).W))
 
   io.data_main(0) := vrf_main_0(15, 0)
   io.data_main(1) := vrf_main_1(15, 0)

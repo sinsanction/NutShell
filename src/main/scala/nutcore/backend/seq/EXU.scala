@@ -53,6 +53,13 @@ class EXU(implicit val p: NutCoreConfig) extends NutCoreModule {
 
   // CNN FU
   val cnnfu = Module(new CNNFU)
+  val cnnOut = cnnfu.access(valid = fuValids(FuType.cnn), src1 = src1, src2 = src2, func = fuOpType)
+  cnnfu.io.imm := io.in.bits.data.imm
+  cnnfu.io.vtag := io.in.bits.ctrl.vtag
+  cnnfu.io.length_k := io.in.bits.ctrl.length_k
+  cnnfu.io.vec_addr := io.in.bits.ctrl.rfDest
+  cnnfu.io.algorithm := io.in.bits.ctrl.algorithm
+  cnnfu.io.out.ready := true.B
 
   val lsu_valid = Mux(fuValids(FuType.cnn), cnnfu.io.loadv.valid, fuValids(FuType.lsu))
   val lsu_src1 = Mux(fuValids(FuType.cnn), cnnfu.io.loadv.src1, src1)
@@ -68,6 +75,12 @@ class EXU(implicit val p: NutCoreConfig) extends NutCoreModule {
   io.out.bits.isMMIO := lsu.io.isMMIO || (AddressSpace.isMMIO(io.in.bits.cf.pc) && io.out.valid)
   io.dmem <> lsu.io.dmem
   lsu.io.out.ready := true.B
+
+  // CNN-LSU
+  cnnfu.io.loadv.load_valid := lsu.io.out.valid
+  cnnfu.io.loadv.load_data := lsuOut
+  cnnfu.io.loadv.load_exception := lsuTlbPF || lsu.io.loadAddrMisaligned || lsu.io.storeAddrMisaligned
+  // CNN-LSU
 
   val mdu = Module(new MDU)
   val mduOut = mdu.access(valid = fuValids(FuType.mdu), src1 = src1, src2 = src2, func = fuOpType)
