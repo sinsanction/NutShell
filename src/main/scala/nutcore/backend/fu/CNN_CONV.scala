@@ -177,7 +177,8 @@ class Wallace_Adder extends Module {
   val wallace_cin = Wire(UInt(24.W))
   wallace_cin := (io.cin.reduce{ (a, b) => Cat(b, a) })(23,0)
   for(i <- 0 until 18) {
-    wallace_in(i) := io.data.reduce{ (a, b) => Cat(b(i), a(i)) }
+    //wallace_in(i) := io.data.reduce{ (a, b) => Cat(b(i), a(i)) }
+    wallace_in(i) := (io.data.map{ a => a(i) }).reduce{ (a, b) => Cat(b, a) }
   }
 
   //val wallace_tree = Vec(18, Module(new Wallace_Tree_25).io)
