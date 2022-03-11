@@ -89,8 +89,9 @@ class CNN_POOL(length: Int) extends NutCoreModule {
     res := pool_avg_mdu.io.data_res
   }
 
-  val res2 = Wire(UInt(16.W))
+  val res2 = WireInit(0.U(16.W))
   io.pool_res := 0.U(64.W)
+
   when (io.data_vwidth(3) === 1.U) {
     io.pool_res := Cat(0.U(48.W), res)
   }.elsewhen (io.data_vwidth(2) === 1.U){

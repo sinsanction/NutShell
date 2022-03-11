@@ -285,6 +285,7 @@ class CNNFU extends NutCoreModule {
   val act_res = act_mdu.io.act_res
   val act_valid = act_mdu.io.act_ok
 
+  io.in.ready := io.out.ready
   io.out.valid := valid && Mux(isAct, act_valid, Mux(isPool, pool_valid, Mux(isConv, conv_valid, lv_valid)))
   io.out.bits := Mux(isAct, act_res, Mux(isPool, pool_res, conv_res))
 }

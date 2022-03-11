@@ -438,7 +438,7 @@ class CNN_CONV(length: Int) extends NutCoreModule {
   val res = Wire(UInt(16.W))
   res := conv_mdu.io.data_res
 
-  val res2 = Wire(UInt(16.W))
+  val res2 = WireInit(0.U(16.W))
   io.conv_res := 0.U(64.W)
 
   when (io.data_main_vwidth(3) === 1.U) {
