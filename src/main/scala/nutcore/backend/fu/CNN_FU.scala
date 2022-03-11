@@ -80,11 +80,11 @@ class CNNFU extends NutCoreModule {
   val select_vwidth = vreg_mdu.io.select_vwidth
 
   val vtype = io.vec_addr(4)
-  val isInt16 = select_vwidth(7).asBools && (vtype === 0.U)
-  val isInt8 = select_vwidth(6).asBools && (vtype === 0.U) || select_vwidth(3).asBools && (vtype === 1.U)
-  val isInt4 = select_vwidth(5).asBools && (vtype === 0.U) || select_vwidth(2).asBools && (vtype === 1.U)
-  val isInt2 = select_vwidth(4).asBools && (vtype === 0.U) || select_vwidth(1).asBools && (vtype === 1.U)
-  val isInt1 = select_vwidth(0).asBools && (vtype === 1.U)
+  val isInt16 = select_vwidth(7) && (vtype === 0.U)
+  val isInt8 = select_vwidth(6) && (vtype === 0.U) || select_vwidth(3) && (vtype === 1.U)
+  val isInt4 = select_vwidth(5) && (vtype === 0.U) || select_vwidth(2) && (vtype === 1.U)
+  val isInt2 = select_vwidth(4) && (vtype === 0.U) || select_vwidth(1) && (vtype === 1.U)
+  val isInt1 = select_vwidth(0) && (vtype === 1.U)
   val vwidth_valid = (vtype === 0.U) && (select_vwidth(7,4) =/= 0.U) || (vtype === 1.U) && (select_vwidth(3,0) =/= 0.U)
 
   // state reg
@@ -231,10 +231,10 @@ class CNNFU extends NutCoreModule {
 
   // data to vrf
   val loadv_data_1 = loadv_data(15, 0)
-  val loadv_data_2 = Mux(io.length_k(2,0) >= 2, loadv_data(31, 16), 0.U(16.W))
-  val loadv_data_3 = Mux(io.length_k(2,0) >= 3, loadv_data(47, 32), 0.U(16.W))
-  val loadv_data_4 = Mux(io.length_k(2,0) >= 4, loadv_data(63, 48), 0.U(16.W))
-  val loadv_data_5 = Mux(io.length_k(2,0) >= 5, loadv_data(79, 64), 0.U(16.W))
+  val loadv_data_2 = Mux(io.length_k(2,0) >= 2.U, loadv_data(31, 16), 0.U(16.W))
+  val loadv_data_3 = Mux(io.length_k(2,0) >= 3.U, loadv_data(47, 32), 0.U(16.W))
+  val loadv_data_4 = Mux(io.length_k(2,0) >= 4.U, loadv_data(63, 48), 0.U(16.W))
+  val loadv_data_5 = Mux(io.length_k(2,0) >= 5.U, loadv_data(79, 64), 0.U(16.W))
   val loadv_data_main   = Cat5(loadv_data_1, loadv_data_2, loadv_data_3, loadv_data_4, loadv_data_5)
   val loadv_data_kernel = Cat5(loadv_data_1(7, 0), loadv_data_2(7, 0), loadv_data_3(7, 0), loadv_data_4(7, 0), loadv_data_5(7, 0))
 
