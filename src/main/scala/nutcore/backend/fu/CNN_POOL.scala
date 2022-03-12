@@ -69,6 +69,8 @@ class CNN_POOL_IO(length: Int) extends Bundle {
 
   val pool_res = Output(UInt(64.W))
   val pool_ok = Output(Bool())
+
+  override def cloneType = (new CNN_POOL_IO(length)).asInstanceOf[this.type]
 }
 
 class CNN_POOL(length: Int) extends NutCoreModule {

@@ -424,6 +424,8 @@ class CNN_CONV_IO(length: Int) extends Bundle {
 
   val conv_res = Output(UInt(64.W))
   val conv_ok = Output(Bool())
+
+  override def cloneType = (new CNN_CONV_IO(length)).asInstanceOf[this.type]
 }
 
 class CNN_CONV(length: Int) extends NutCoreModule {
