@@ -6,13 +6,13 @@ import chisel3.util.experimental.BoringUtils
 
 import utils._
 
-object MAX2 {
+object Max2 {
   def apply(a: UInt, b: UInt) = {
     Mux(a>=b, a, b)
   }
 }
 
-class CNN_VECTOR_REGFILE_IO extends Bundle {
+class CNNVectorRegFileIO extends Bundle {
   val vaddr = Input(UInt(5.W))
   val vtag = Input(UInt(3.W))
   val vop = Input(UInt(3.W))   //100: load-v.d  010: load-v.p  001: load-v.width
@@ -30,8 +30,8 @@ class CNN_VECTOR_REGFILE_IO extends Bundle {
   val act_vwidth = Output(UInt(4.W))
 }
 
-class CNN_VECTOR_REGFILE extends NutCoreModule {
-  val io = IO(new CNN_VECTOR_REGFILE_IO)
+class CNNVectorRegFile extends NutCoreModule {
+  val io = IO(new CNNVectorRegFileIO)
 
   //vector reg
   val vrf_main = Mem(5, UInt((16*5).W))
@@ -167,12 +167,12 @@ class CNN_VECTOR_REGFILE extends NutCoreModule {
   val main_vw_max = Wire(Vec(5, UInt(4.W)))
   for(i <- 0 until 5) {
       if(i == 0) main_vw_max(i) := vwidth_main(0)
-      else       main_vw_max(i) := MAX2(vwidth_main(i), main_vw_max(i-1))
+      else       main_vw_max(i) := Max2(vwidth_main(i), main_vw_max(i-1))
   }
   val kernel_vw_max = Wire(Vec(5, UInt(4.W)))
   for(i <- 0 until 5) {
       if(i == 0) kernel_vw_max(i) := vwidth_kernel(0)
-      else       kernel_vw_max(i) := MAX2(vwidth_kernel(i), kernel_vw_max(i-1))
+      else       kernel_vw_max(i) := Max2(vwidth_kernel(i), kernel_vw_max(i-1))
   }
 
   io.data_main_vwidth := 0.U

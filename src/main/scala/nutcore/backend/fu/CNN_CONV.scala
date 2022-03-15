@@ -6,7 +6,7 @@ import chisel3.util.experimental.BoringUtils
 
 import utils._
 
-class BOOTH_ENCODER_P extends Module {
+class BoothEncoderP extends Module {
   val io = IO(new Bundle {
     val y = Input(UInt(3.W))
     val x = Input(UInt(18.W))
@@ -41,16 +41,16 @@ class BOOTH_ENCODER_P extends Module {
     }
   }
 }
-object BOOTH_ENCODER_P {
+object BoothEncoderP {
   def apply(y: UInt, x: UInt) = {
-    val m = Module(new BOOTH_ENCODER_P)
+    val m = Module(new BoothEncoderP)
     m.io.y := y
     m.io.x := x
     m.io.p
   }
 }
 
-class BOOTH_ENCODER_C extends Module {
+class BoothEncoderC extends Module {
   val io = IO(new Bundle {
     val y = Input(UInt(3.W))
     val c = Output(UInt(1.W))
@@ -69,36 +69,36 @@ class BOOTH_ENCODER_C extends Module {
     }
   }
 }
-object BOOTH_ENCODER_C {
+object BoothEncoderC {
   def apply(y: UInt) = {
-    val m = Module(new BOOTH_ENCODER_C)
+    val m = Module(new BoothEncoderC)
     m.io.y := y
     m.io.c
   }
 }
 
-object ADDER_FULL_S {
+object AdderFullS {
   def apply(a: UInt, b: UInt, cin: UInt) = {
     a ^ b ^ cin
   }
 }
-object ADDER_FULL_COUT {
+object AdderFullCout {
   def apply(a: UInt, b: UInt, cin: UInt) = {
     a & b | a & cin | b & cin
   }
 }
-object ADDER_HALF_S {
+object AdderHalfS {
   def apply(a: UInt, b: UInt) = {
     a ^ b
   }
 }
-object ADDER_HALF_COUT {
+object AdderHalfCout {
   def apply(a: UInt, b: UInt) = {
     a & b
   }
 }
 
-class Wallace_Tree_25 extends Module {
+class WallaceTree25 extends Module {
   val io = IO(new Bundle {
     val n = Input(UInt(25.W))
     val cin = Input(UInt(24.W))
@@ -111,61 +111,61 @@ class Wallace_Tree_25 extends Module {
   //layer1: 8 full adder
   val ly1_out = Wire(Vec(8, UInt(1.W)))
   for(i <- 0 until 8) {
-    ly1_out(i) := ADDER_FULL_S( io.n(3*i), io.n(3*i+1), io.n(3*i+2) )
-    out_cout(i) := ADDER_FULL_COUT( io.n(3*i), io.n(3*i+1), io.n(3*i+2) )
+    ly1_out(i)  := AdderFullS( io.n(3*i), io.n(3*i+1), io.n(3*i+2) )
+    out_cout(i) := AdderFullCout( io.n(3*i), io.n(3*i+1), io.n(3*i+2) )
   }
 
   //layer2: 5 full adder + 1 half adder
   val ly2_in = Cat( ly1_out.reduce{ (a, b) => Cat(b, a) }, Cat( io.cin(7, 0), io.n(24) ) )  //17 bit
   val ly2_out = Wire(Vec(6, UInt(1.W)))
   for(i <- 0 until 5) {
-    ly2_out(i) := ADDER_FULL_S( ly2_in(3*i), ly2_in(3*i+1), ly2_in(3*i+2) )
-    out_cout(i+8) := ADDER_FULL_COUT( ly2_in(3*i), ly2_in(3*i+1), ly2_in(3*i+2) )
+    ly2_out(i)    := AdderFullS( ly2_in(3*i), ly2_in(3*i+1), ly2_in(3*i+2) )
+    out_cout(i+8) := AdderFullCout( ly2_in(3*i), ly2_in(3*i+1), ly2_in(3*i+2) )
   }
-  ly2_out(5) := ADDER_HALF_S( ly2_in(15), ly2_in(16) )
-  out_cout(13) := ADDER_HALF_COUT( ly2_in(15), ly2_in(16) )
+  ly2_out(5)   := AdderHalfS( ly2_in(15), ly2_in(16) )
+  out_cout(13) := AdderHalfCout( ly2_in(15), ly2_in(16) )
 
   //layer3: 4 full adder
   val ly3_in = Cat( ly2_out.reduce{ (a, b) => Cat(b, a) }, io.cin(13, 8) )  //12 bit
   val ly3_out = Wire(Vec(4, UInt(1.W)))
   for(i <- 0 until 4) {
-    ly3_out(i) := ADDER_FULL_S( ly3_in(3*i), ly3_in(3*i+1), ly3_in(3*i+2) )
-    out_cout(i+14) := ADDER_FULL_COUT( ly3_in(3*i), ly3_in(3*i+1), ly3_in(3*i+2) )
+    ly3_out(i)     := AdderFullS( ly3_in(3*i), ly3_in(3*i+1), ly3_in(3*i+2) )
+    out_cout(i+14) := AdderFullCout( ly3_in(3*i), ly3_in(3*i+1), ly3_in(3*i+2) )
   }
 
   //layer4: 2 full adder + 1 half adder
   val ly4_in = Cat( ly3_out.reduce{ (a, b) => Cat(b, a) }, io.cin(17, 14) )  //8 bit
   val ly4_out = Wire(Vec(3, UInt(1.W)))
   for(i <- 0 until 2) {
-    ly4_out(i) := ADDER_FULL_S( ly4_in(3*i), ly4_in(3*i+1), ly4_in(3*i+2) )
-    out_cout(i+18) := ADDER_FULL_COUT( ly4_in(3*i), ly4_in(3*i+1), ly4_in(3*i+2) )
+    ly4_out(i)     := AdderFullS( ly4_in(3*i), ly4_in(3*i+1), ly4_in(3*i+2) )
+    out_cout(i+18) := AdderFullCout( ly4_in(3*i), ly4_in(3*i+1), ly4_in(3*i+2) )
   }
-  ly4_out(2) := ADDER_HALF_S( ly4_in(6), ly4_in(7) )
-  out_cout(20) := ADDER_HALF_COUT( ly4_in(6), ly4_in(7) )
+  ly4_out(2)   := AdderHalfS( ly4_in(6), ly4_in(7) )
+  out_cout(20) := AdderHalfCout( ly4_in(6), ly4_in(7) )
 
   //layer5: 2 full adder
   val ly5_in = Cat( ly4_out.reduce{ (a, b) => Cat(b, a) }, io.cin(20, 18) )  //6 bit
   val ly5_out = Wire(Vec(2, UInt(1.W)))
   for(i <- 0 until 2) {
-    ly5_out(i) := ADDER_FULL_S( ly5_in(3*i), ly5_in(3*i+1), ly5_in(3*i+2) )
-    out_cout(i+21) := ADDER_FULL_COUT( ly5_in(3*i), ly5_in(3*i+1), ly5_in(3*i+2) )
+    ly5_out(i)     := AdderFullS( ly5_in(3*i), ly5_in(3*i+1), ly5_in(3*i+2) )
+    out_cout(i+21) := AdderFullCout( ly5_in(3*i), ly5_in(3*i+1), ly5_in(3*i+2) )
   }
 
   //layer6: 1 full adder
   val ly6_in = Cat( ly5_out.reduce{ (a, b) => Cat(b, a) }, io.cin(21) )  //3 bit
   val ly6_out = Wire(UInt(1.W))
-  ly6_out := ADDER_FULL_S( ly6_in(0), ly6_in(1), ly6_in(2) )
-  out_cout(23) := ADDER_FULL_COUT( ly6_in(0), ly6_in(1), ly6_in(2) )
+  ly6_out      := AdderFullS( ly6_in(0), ly6_in(1), ly6_in(2) )
+  out_cout(23) := AdderFullCout( ly6_in(0), ly6_in(1), ly6_in(2) )
 
   //layer7: 1 full adder
   val ly7_in = Cat( ly6_out, io.cin(23, 22) )  //3 bit
 
-  io.s := ADDER_FULL_S( ly7_in(0), ly7_in(1), ly7_in(2) )
-  io.c := ADDER_FULL_COUT( ly7_in(0), ly7_in(1), ly7_in(2) )
+  io.s := AdderFullS( ly7_in(0), ly7_in(1), ly7_in(2) )
+  io.c := AdderFullCout( ly7_in(0), ly7_in(1), ly7_in(2) )
   io.cout := out_cout.reduce{ (a, b) => Cat(b, a) }
 }
 
-class Wallace_Adder extends Module {
+class WallaceAdder extends Module {
   val io = IO(new Bundle {
     val data = Input(Vec(25, UInt(18.W)))
     val cin = Input(Vec(25, UInt(1.W)))
@@ -181,7 +181,7 @@ class Wallace_Adder extends Module {
     wallace_in(i) := (io.data.map{ a => a(i).asUInt }).reduce{ (a: UInt, b: UInt) => Cat(b, a) }
   }
 
-  val wallace_tree = VecInit(Seq.fill(18)(Module(new Wallace_Tree_25).io))
+  val wallace_tree = VecInit(Seq.fill(18)(Module(new WallaceTree25).io))
   val out_s = Wire(Vec(18, UInt(1.W)))
   val out_c = Wire(Vec(18, UInt(1.W)))
 
@@ -204,7 +204,7 @@ class Wallace_Adder extends Module {
   io.c := out_c.reduce{ (a, b) => Cat(b, a) }
 }
 
-class CNN_CONV_SUB25 extends Module {
+class CNNConvSub25 extends Module {
   val io = IO(new Bundle {
     val conv_valid = Input(Bool())
     val data_main = Input(Vec(25, UInt(16.W)))
@@ -215,7 +215,7 @@ class CNN_CONV_SUB25 extends Module {
     val data_ok = Output(Bool())
   })
 
-  // Part1
+  // Stage 1
   //Booth
   val booth_p1 = Wire(Vec(25, UInt(18.W)))
   val booth_p2 = Wire(Vec(25, UInt(18.W)))
@@ -228,22 +228,22 @@ class CNN_CONV_SUB25 extends Module {
   val booth_c4 = Wire(Vec(25, UInt(1.W)))
 
   for(i <- 0 until 25) {
-    booth_p1(i) := BOOTH_ENCODER_P( Cat(io.data_kernel(i)(1, 0), 0.U(1.W)), ZeroExt(io.data_main(i), 18) )
-    booth_p2(i) := BOOTH_ENCODER_P( io.data_kernel(i)(3, 1), ZeroExt(io.data_main(i), 18) << 2 )
-    booth_p3(i) := BOOTH_ENCODER_P( io.data_kernel(i)(5, 3), ZeroExt(io.data_main(i), 18) << 4 )
-    booth_p4(i) := BOOTH_ENCODER_P( io.data_kernel(i)(7, 5), ZeroExt(io.data_main(i), 18) << 6 )
+    booth_p1(i) := BoothEncoderP( Cat(io.data_kernel(i)(1, 0), 0.U(1.W)), ZeroExt(io.data_main(i), 18) )
+    booth_p2(i) := BoothEncoderP( io.data_kernel(i)(3, 1), ZeroExt(io.data_main(i), 18) << 2 )
+    booth_p3(i) := BoothEncoderP( io.data_kernel(i)(5, 3), ZeroExt(io.data_main(i), 18) << 4 )
+    booth_p4(i) := BoothEncoderP( io.data_kernel(i)(7, 5), ZeroExt(io.data_main(i), 18) << 6 )
 
-    booth_c1(i) := BOOTH_ENCODER_C( Cat(io.data_kernel(i)(1, 0), 0.U(1.W)) )
-    booth_c2(i) := BOOTH_ENCODER_C( io.data_kernel(i)(3, 1) )
-    booth_c3(i) := BOOTH_ENCODER_C( io.data_kernel(i)(5, 3) )
-    booth_c4(i) := BOOTH_ENCODER_C( io.data_kernel(i)(7, 5) )
+    booth_c1(i) := BoothEncoderC( Cat(io.data_kernel(i)(1, 0), 0.U(1.W)) )
+    booth_c2(i) := BoothEncoderC( io.data_kernel(i)(3, 1) )
+    booth_c3(i) := BoothEncoderC( io.data_kernel(i)(5, 3) )
+    booth_c4(i) := BoothEncoderC( io.data_kernel(i)(7, 5) )
   }
 
   //Wallace
-  val wallace_adder1 = Module(new Wallace_Adder)
-  val wallace_adder2 = Module(new Wallace_Adder)
-  val wallace_adder3 = Module(new Wallace_Adder)
-  val wallace_adder4 = Module(new Wallace_Adder)
+  val wallace_adder1 = Module(new WallaceAdder)
+  val wallace_adder2 = Module(new WallaceAdder)
+  val wallace_adder3 = Module(new WallaceAdder)
+  val wallace_adder4 = Module(new WallaceAdder)
   for(i <- 0 until 25) {
     wallace_adder1.io.data(i) := booth_p1(i)
     wallace_adder2.io.data(i) := booth_p2(i)
@@ -265,7 +265,7 @@ class CNN_CONV_SUB25 extends Module {
 
   val res_int21 = s_1 + c_1
 
-  // Part2
+  // Stage 2
   //reg
   val state = RegInit(false.B)
   val part2_valid = io.conv_valid && !state &&  ( (io.data_kernel_vwidth(3) === 1.U) || (io.data_kernel_vwidth(2) === 1.U) )
@@ -306,7 +306,7 @@ class CNN_CONV_SUB25 extends Module {
   .otherwise { io.data_ok := true.B }
 }
 
-class CNN_CONV_IO(length: Int) extends Bundle {
+class CNNConvIO(length: Int) extends Bundle {
   val conv_valid = Input(Bool())
   val k = Input(UInt(4.W))
   val data_main = Input(Vec(length*length, UInt(16.W)))
@@ -317,13 +317,13 @@ class CNN_CONV_IO(length: Int) extends Bundle {
   val conv_res = Output(UInt(64.W))
   val conv_ok = Output(Bool())
 
-  override def cloneType = (new CNN_CONV_IO(length)).asInstanceOf[this.type]
+  override def cloneType = (new CNNConvIO(length)).asInstanceOf[this.type]
 }
 
-class CNN_CONV(length: Int) extends NutCoreModule {
-  val io = IO(new CNN_CONV_IO(length))
+class CNNConv(length: Int) extends NutCoreModule {
+  val io = IO(new CNNConvIO(length))
 
-  val conv_mdu = Module(new CNN_CONV_SUB25)
+  val conv_mdu = Module(new CNNConvSub25)
   conv_mdu.io.conv_valid := io.conv_valid
   conv_mdu.io.data_main := io.data_main
   conv_mdu.io.data_kernel := io.data_kernel

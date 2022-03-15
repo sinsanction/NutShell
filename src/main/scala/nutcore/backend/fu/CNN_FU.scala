@@ -76,7 +76,7 @@ class CNNFU extends NutCoreModule {
   val isLoadW = CNNOpType.isLoadW(func) && valid
 
   // VRF
-  val vreg_mdu = Module(new CNN_VECTOR_REGFILE)
+  val vreg_mdu = Module(new CNNVectorRegFile)
   val select_vwidth = vreg_mdu.io.select_vwidth
 
   val vtype = io.vec_addr(4)
@@ -256,7 +256,7 @@ class CNNFU extends NutCoreModule {
   vreg_mdu.io.load_vwidth := io.loadv.load_data
   
   // CONV
-  val conv_mdu = Module(new CNN_CONV(length=5))
+  val conv_mdu = Module(new CNNConv(length=5))
   conv_mdu.io.conv_valid         := isConv
   conv_mdu.io.k                  := io.length_k
   conv_mdu.io.data_main          := vreg_mdu.io.data_main
@@ -267,7 +267,7 @@ class CNNFU extends NutCoreModule {
   val conv_valid = conv_mdu.io.conv_ok
 
   // POOL
-  val pool_mdu = Module(new CNN_POOL(length=5))
+  val pool_mdu = Module(new CNNPool(length=5))
   pool_mdu.io.pool_valid  := isPool
   pool_mdu.io.k           := io.length_k
   pool_mdu.io.agm         := io.algorithm
@@ -277,7 +277,7 @@ class CNNFU extends NutCoreModule {
   val pool_valid = pool_mdu.io.pool_ok
   
   // ACT
-  val act_mdu = Module(new CNN_ACT)
+  val act_mdu = Module(new CNNAct)
   act_mdu.io.act_valid   := isAct
   act_mdu.io.data_main   := src1
   act_mdu.io.data_zero   := src2

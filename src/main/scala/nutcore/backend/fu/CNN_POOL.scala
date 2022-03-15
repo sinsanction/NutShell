@@ -6,7 +6,7 @@ import chisel3.util.experimental.BoringUtils
 
 import utils._
 
-class CNN_POOL_MAX(length: Int) extends Module {
+class CNNPoolMax(length: Int) extends Module {
   val io = IO(new Bundle {
     val data_main = Input(Vec(length*length, UInt(16.W)))
     val data_res = Output(UInt(16.W))
@@ -15,7 +15,7 @@ class CNN_POOL_MAX(length: Int) extends Module {
   io.data_res := io.data_main.reduce( (a, b) => Mux(a >= b, a, b) )
 }
 
-class CNN_POOL_AVG(length: Int) extends Module {
+class CNNPoolAvg(length: Int) extends Module {
   val io = IO(new Bundle {
     val k = Input(UInt(4.W))
     val data_main = Input(Vec(length*length, UInt(16.W)))
@@ -60,7 +60,7 @@ class CNN_POOL_AVG(length: Int) extends Module {
   }
 }
 
-class CNN_POOL_IO(length: Int) extends Bundle {
+class CNNPoolIO(length: Int) extends Bundle {
   val pool_valid = Input(Bool())
   val k = Input(UInt(4.W))
   val agm = Input(UInt(2.W))
@@ -70,16 +70,16 @@ class CNN_POOL_IO(length: Int) extends Bundle {
   val pool_res = Output(UInt(64.W))
   val pool_ok = Output(Bool())
 
-  override def cloneType = (new CNN_POOL_IO(length)).asInstanceOf[this.type]
+  override def cloneType = (new CNNPoolIO(length)).asInstanceOf[this.type]
 }
 
-class CNN_POOL(length: Int) extends NutCoreModule {
-  val io = IO(new CNN_POOL_IO(length))
+class CNNPool(length: Int) extends NutCoreModule {
+  val io = IO(new CNNPoolIO(length))
 
-  val pool_max_mdu = Module(new CNN_POOL_MAX(length))
+  val pool_max_mdu = Module(new CNNPoolMax(length))
   pool_max_mdu.io.data_main := io.data_main
 
-  val pool_avg_mdu = Module(new CNN_POOL_AVG(length))
+  val pool_avg_mdu = Module(new CNNPoolAvg(length))
   pool_avg_mdu.io.data_main := io.data_main
   pool_avg_mdu.io.k := io.k
 
