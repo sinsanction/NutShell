@@ -193,8 +193,8 @@ class CNNConvSub25 extends Module {
 
   // Stage 1
   //Booth
-  val booth_p = Wire(VecInit.fill(4, 25)(UInt(18.W)))
-  val booth_c = Wire(VecInit.fill(4, 25)(UInt(1.W)))
+  val booth_p = WireInit(VecInit.fill(4, 25)(0.U(18.W)))
+  val booth_c = WireInit(VecInit.fill(4, 25)(0.U(1.W)))
   for (i <- 0 until 4) {
     for (j <- 0 until 25) {
       if (i == 0) {
