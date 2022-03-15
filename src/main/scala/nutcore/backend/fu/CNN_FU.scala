@@ -28,7 +28,7 @@ object CNNOpType {
 
 object Cat5 {
  def apply(a1: UInt, a2: UInt, a3: UInt, a4: UInt, a5: UInt) = {
-   Cat(a5, Cat(a4, Cat(a3, Cat(a2, a1))))
+   Cat(a5, a4, a3, a2, a1)
  }
 }
 

@@ -24,40 +24,31 @@ class CNNPoolAvg(length: Int) extends Module {
 
   val sum = Wire(UInt(21.W))
   sum := io.data_main.reduce(_ +& _)
-  
-  io.data_res := 0.U
-  switch (io.k) {
-    is( 1.U ) {
-      io.data_res := sum(15, 0)
-    }
-    is( 2.U ) {
-      val div = sum >> 2.U
-      io.data_res := div(15, 0)
-    }
-    is( 3.U ) {
-      val mul_res = Wire(UInt(42.W))
-      mul_res := sum * 1864135.U(21.W)
-      val div = (mul_res >> 24.U) + mul_res(23)
-      io.data_res := div(15, 0)
-    }
-    is( 4.U ) {
-      val div = sum >> 4.U
-      io.data_res := div(15, 0)
-    }
-    is( 5.U ) {
-      val mul_res1 = Wire(UInt(51.W))
-      mul_res1 := sum * 858993459.U(30.W)
-      val div1 = Wire(UInt(19.W))
-      div1 := (mul_res1 >> 32.U) + mul_res1(31)
 
-      val mul_res2 = Wire(UInt(49.W))
-      mul_res2 := div1 * 858993459.U(30.W)
-      val div2 = Wire(UInt(17.W))
-      div2 := (mul_res2 >> 32.U) + mul_res2(31)
+  val div4 = sum >> 2
 
-      io.data_res := div2(15, 0)
-    }
-  }
+  val mul_res = Wire(UInt(42.W))
+  mul_res := sum * 1864135.U(21.W)
+  val div9 = (mul_res >> 24.U) + mul_res(23)
+
+  val div16 = sum >> 4
+
+  val mul_res1 = Wire(UInt(51.W))
+  val div5 = Wire(UInt(19.W))
+  val mul_res2 = Wire(UInt(49.W))
+  val div25 = Wire(UInt(17.W))
+  mul_res1 := sum * 858993459.U(30.W)
+  div5 := (mul_res1 >> 32.U) + mul_res1(31)
+  mul_res2 := div5 * 858993459.U(30.W)
+  div25 := (mul_res2 >> 32.U) + mul_res2(31)
+
+  io.data_res := LookupTreeDefault(io.k, 0.U(16.W), List(
+    1.U  -> sum(15, 0),
+    2.U  -> div4(15, 0),
+    3.U  -> div9(15, 0),
+    4.U  -> div16(15, 0),
+    5.U  -> div25(15, 0)
+  ))
 }
 
 class CNNPoolIO(length: Int) extends Bundle {
@@ -84,28 +75,18 @@ class CNNPool(length: Int) extends NutCoreModule {
   pool_avg_mdu.io.k := io.k
 
   val res = Wire(UInt(16.W))
-  res := 0.U
-  when(io.agm(0) === 1.U) {
-    res := pool_max_mdu.io.data_res
-  }.elsewhen(io.agm(1) === 1.U) {
-    res := pool_avg_mdu.io.data_res
-  }
+  res := LookupTreeDefault(io.agm, 0.U(16.W), List(
+    "b01".U  -> pool_max_mdu.io.data_res,
+    "b10".U  -> pool_avg_mdu.io.data_res
+  ))
 
-  val res2 = WireInit(0.U(16.W))
-  io.pool_res := 0.U(64.W)
-
-  when (io.data_vwidth(3) === 1.U) {
-    io.pool_res := Cat(0.U(48.W), res)
-  }.elsewhen (io.data_vwidth(2) === 1.U){
-    res2 := Mux(res > 255.U(16.W), 255.U(16.W), res)
-    io.pool_res := Cat(0.U(48.W), res2)
-  }.elsewhen (io.data_vwidth(1) === 1.U) {
-    res2 := Mux(res > 15.U(16.W), 15.U(16.W), res)
-    io.pool_res := Cat(0.U(48.W), res2)
-  }.elsewhen (io.data_vwidth(0) === 1.U) {
-    res2 := Mux(res > 3.U(16.W), 3.U(16.W), res)
-    io.pool_res := Cat(0.U(48.W), res2)
-  }
-
+  val res2 = Wire(UInt(16.W))
+  res2 := LookupTreeDefault(io.data_vwidth, 0.U(16.W), List(
+    "b1000".U  -> res,
+    "b0100".U  -> Mux(res > 255.U(16.W), 255.U(16.W), res),
+    "b0010".U  -> Mux(res > 15.U(16.W), 15.U(16.W), res),
+    "b0001".U  -> Mux(res > 3.U(16.W), 3.U(16.W), res)
+  ))
+  io.pool_res := Cat(0.U(48.W), res2)
   io.pool_ok := true.B
 }
