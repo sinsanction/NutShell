@@ -17,7 +17,7 @@ class BoothEncoderP extends Module {
     "b000".U -> 0.U,
     "b001".U -> io.x,
     "b010".U -> io.x,
-    "b011".U -> io.x << 1,
+    "b011".U -> (io.x << 1),
     "b100".U -> ~(io.x << 1),
     "b101".U -> ~io.x,
     "b110".U -> ~io.x,
