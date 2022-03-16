@@ -85,7 +85,9 @@ class CNNFU extends NutCoreModule {
   val isInt4 = select_vwidth(5) && (vtype === 0.U) || select_vwidth(2) && (vtype === 1.U)
   val isInt2 = select_vwidth(4) && (vtype === 0.U) || select_vwidth(1) && (vtype === 1.U)
   val isInt1 = select_vwidth(0) && (vtype === 1.U)
-  val vwidth_valid = (vtype === 0.U) && (select_vwidth(7,4) =/= 0.U) || (vtype === 1.U) && (select_vwidth(3,0) =/= 0.U)
+  val vwidth_valid = (vtype === 0.U) && (PopCount(select_vwidth(7,4)) === 1.U) || (vtype === 1.U) && (PopCount(select_vwidth(3,0)) === 1.U)
+  val k_valid = (io.length_k =/= 0.U)
+  val intNumVec = Cat5(isInt1, isInt2, isInt4, isInt8, isInt16)
 
   // state reg
   val s_stage1 :: s_stage2 :: Nil = Enum(2)
@@ -175,82 +177,51 @@ class CNNFU extends NutCoreModule {
   ))
 
   // ALL
-  val loadv_src1 = WireInit(0.U(XLEN.W))
-  val loadv_src2 = WireInit(0.U(XLEN.W))
-  val loadv_func = WireInit(0.U(7.W))
-  val loadv_data = WireInit(0.U((16*5).W))
-  val stage2_valid = WireInit(false.B)
-
-  when (isInt16) {
-    loadv_src1 := int16_src1
-    loadv_src2 := int16_src2
-    loadv_func := int16_func
-    loadv_data := int16_load_data
-    stage2_valid := int16_stage2_valid
-
-  }.elsewhen (isInt8) {
-    loadv_src1 := int8_src1
-    loadv_src2 := int8_src2
-    loadv_func := int8_func
-    loadv_data := int8_load_data
-    stage2_valid := int8_stage2_valid
-
-  }.elsewhen (isInt4) {
-    loadv_src1 := int4_src1
-    loadv_src2 := int4_src2
-    loadv_func := int4_func
-    loadv_data := int4_load_data
-    stage2_valid := int4_stage2_valid
-
-  }.elsewhen (isInt2) {
-    loadv_src1 := int2_src1
-    loadv_src2 := int2_src2
-    loadv_func := int2_func
-    loadv_data := int2_load_data
-    stage2_valid := int2_stage2_valid
-
-  }.elsewhen (isInt1) {
-    loadv_src1 := int1_src1
-    loadv_src2 := int1_src2
-    loadv_func := int1_func
-    loadv_data := int1_load_data
-    stage2_valid := int1_stage2_valid
-
-  }
+  val LoadvCtrlTable = List(
+    "b10000".U -> (int16_src1, int16_src2, int16_func, int16_load_data, int16_stage2_valid),
+    "b01000".U -> (int8_src1, int8_src2, int8_func, int8_load_data, int8_stage2_valid),
+    "b00100".U -> (int4_src1, int4_src2, int4_func, int4_load_data, int4_stage2_valid),
+    "b00010".U -> (int2_src1, int2_src2, int2_func, int2_load_data, int2_stage2_valid),
+    "b00001".U -> (int1_src1, int1_src2, int1_func, int1_load_data, int1_stage2_valid)
+  )
+  val loadv_src1   = LookupTreeDefault(intNumVec, 0.U(XLEN.W),   LoadvCtrlTable.map(p => (p._1, p._2._1)))
+  val loadv_src2   = LookupTreeDefault(intNumVec, 0.U(XLEN.W),   LoadvCtrlTable.map(p => (p._1, p._2._2)))
+  val loadv_func   = LookupTreeDefault(intNumVec, 0.U(7.W),      LoadvCtrlTable.map(p => (p._1, p._2._3)))
+  val loadv_data   = LookupTreeDefault(intNumVec, 0.U((16*5).W), LoadvCtrlTable.map(p => (p._1, p._2._4)))
+  val stage2_valid = LookupTreeDefault(intNumVec, false.B,       LoadvCtrlTable.map(p => (p._1, p._2._5)))
 
   // state reg
   switch (state) {
     is (s_stage1) {
-      when ( (isLoadD || isLoadP) && vwidth_valid && stage2_valid && lsu_valid && !lsu_ex ) { state := s_stage2 }
+      when ( (isLoadD || isLoadP) && stage2_valid && lsu_valid && !lsu_ex ) { state := s_stage2 }
     }
     is (s_stage2) {
       when ( lsu_valid ) { state := s_stage1 }
     }
   }
-  when ( (state === s_stage1) && (isLoadD || isLoadP) && vwidth_valid && stage2_valid && lsu_valid && !lsu_ex ) { data_stage1 := lsu_data }
+  when ( (state === s_stage1) && (isLoadD || isLoadP) && stage2_valid && lsu_valid && !lsu_ex ) { data_stage1 := lsu_data }
 
   // data to vrf
-  val loadv_data_1 = loadv_data(15, 0)
-  val loadv_data_2 = Mux(io.length_k(2,0) >= 2.U, loadv_data(31, 16), 0.U(16.W))
-  val loadv_data_3 = Mux(io.length_k(2,0) >= 3.U, loadv_data(47, 32), 0.U(16.W))
-  val loadv_data_4 = Mux(io.length_k(2,0) >= 4.U, loadv_data(63, 48), 0.U(16.W))
-  val loadv_data_5 = Mux(io.length_k(2,0) >= 5.U, loadv_data(79, 64), 0.U(16.W))
-  val loadv_data_main   = Cat5(loadv_data_1, loadv_data_2, loadv_data_3, loadv_data_4, loadv_data_5)
-  val loadv_data_kernel = Cat5(loadv_data_1(7, 0), loadv_data_2(7, 0), loadv_data_3(7, 0), loadv_data_4(7, 0), loadv_data_5(7, 0))
+  val loadv_data_elem = Wire(Vec(5, UInt(16.W)))
+  for (i <- 0 until 5) {
+    loadv_data_elem(i) := Mux(io.length_k(2,0) >= (i+1).U, loadv_data(16*i+15, 16*i), 0.U(16.W))
+  }
+  val loadv_data_main   = loadv_data_elem.reduce{ (a, b) => Cat(b, a) }
+  val loadv_data_kernel = loadv_data_elem.map{ a => a(7, 0) }.reduce{ (a, b) => Cat(b, a) }
 
   val loadv_valid = Mux(stage2_valid, (state === s_stage2) && lsu_valid || (state === s_stage1) && lsu_valid && lsu_ex, lsu_valid)
 
-  io.loadv.valid := (isLoadD || isLoadP) && vwidth_valid || isLoadW
+  io.loadv.valid := (isLoadD || isLoadP) && vwidth_valid && k_valid || isLoadW
   io.loadv.src1 := Mux(isLoadD || isLoadP, loadv_src1, src1)
   io.loadv.src2 := Mux(isLoadD || isLoadP, loadv_src2, io.imm)
   io.loadv.func := Mux(isLoadD || isLoadP, loadv_func, LSUOpType.ld)
-  val lv_valid = Mux(isLoadW, lsu_valid, Mux((isLoadD || isLoadP) && vwidth_valid, loadv_valid, true.B))
+  val lv_valid = Mux(isLoadW, lsu_valid, Mux((isLoadD || isLoadP) && vwidth_valid && k_valid, loadv_valid, true.B))
 
   vreg_mdu.io.vaddr       := io.vec_addr
   vreg_mdu.io.vtag        := io.vtag
   vreg_mdu.io.vop         := func(2,0)
   vreg_mdu.io.k           := io.length_k
-  vreg_mdu.io.vwen        := lv_valid && ((isLoadD || isLoadP) && vwidth_valid || isLoadW) && !lsu_ex
+  vreg_mdu.io.vwen        := lv_valid && ((isLoadD || isLoadP) && vwidth_valid && k_valid || isLoadW) && !lsu_ex
   vreg_mdu.io.load_data   := loadv_data_main
   vreg_mdu.io.load_kernel := loadv_data_kernel
   vreg_mdu.io.load_vwidth := io.loadv.load_data
