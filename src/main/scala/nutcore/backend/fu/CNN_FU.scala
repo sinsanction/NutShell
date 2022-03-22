@@ -32,6 +32,12 @@ object Cat5 {
  }
 }
 
+object SignZeroExt {
+  def apply(a: UInt, sign: Bool, len: Int) = {
+    Mux(sign, SignExt(a, len), ZeroExt(a, len))
+  }
+}
+
 class CNNtoLSUIO extends NutCoreBundle {
   val valid = Output(Bool())
   val src1 = Output(UInt(XLEN.W))
@@ -87,6 +93,7 @@ class CNNFU extends NutCoreModule {
   val isInt1 = select_vwidth(0) && (vtype === 1.U)
   val vwidth_valid = (vtype === 0.U) && (PopCount(select_vwidth(7,4)) === 1.U) || (vtype === 1.U) && (PopCount(select_vwidth(3,0)) === 1.U)
   val k_valid = (io.length_k =/= 0.U)
+  val isSign = (vtype === 1.U)
   val intNumVec = Cat5(isInt1, isInt2, isInt4, isInt8, isInt16)
 
   // state reg
@@ -115,14 +122,14 @@ class CNNFU extends NutCoreModule {
   val int8_func = Mux(state === s_stage2, LSUOpType.lwu, Mux(src1(2)===1.U, LSUOpType.lwu, LSUOpType.ld))
   val int8_stage2_valid = (src1(2,0) +& io.length_k(2,0)) >= 9.U(4.W)
   val int8_load_data = LookupTree(src1(2,0), List(
-    "b000".U -> Cat5( ZeroExt(lsu_data( 7, 0),16), ZeroExt(lsu_data(15, 8),16), ZeroExt(lsu_data(23,16),16), ZeroExt(lsu_data(31,24),16), ZeroExt(lsu_data(39,32),16) ),
-    "b001".U -> Cat5( ZeroExt(lsu_data(15, 8),16), ZeroExt(lsu_data(23,16),16), ZeroExt(lsu_data(31,24),16), ZeroExt(lsu_data(39,32),16), ZeroExt(lsu_data(47,40),16) ),
-    "b010".U -> Cat5( ZeroExt(lsu_data(23,16),16), ZeroExt(lsu_data(31,24),16), ZeroExt(lsu_data(39,32),16), ZeroExt(lsu_data(47,40),16), ZeroExt(lsu_data(55,48),16) ),
-    "b011".U -> Cat5( ZeroExt(lsu_data(31,24),16), ZeroExt(lsu_data(39,32),16), ZeroExt(lsu_data(47,40),16), ZeroExt(lsu_data(55,48),16), ZeroExt(lsu_data(63,56),16) ),
-    "b100".U -> Cat5( ZeroExt(data_stage1( 7, 0),16), ZeroExt(data_stage1(15, 8),16), ZeroExt(data_stage1(23,16),16), ZeroExt(data_stage1(31,24),16), ZeroExt(lsu_data( 7, 0),16) ),
-    "b101".U -> Cat5( ZeroExt(data_stage1(15, 8),16), ZeroExt(data_stage1(23,16),16), ZeroExt(data_stage1(31,24),16), ZeroExt(lsu_data( 7, 0),16),    ZeroExt(lsu_data(15, 8),16) ),
-    "b110".U -> Cat5( ZeroExt(data_stage1(23,16),16), ZeroExt(data_stage1(31,24),16), ZeroExt(lsu_data( 7, 0),16),    ZeroExt(lsu_data(15, 8),16),    ZeroExt(lsu_data(23,16),16) ),
-    "b111".U -> Cat5( ZeroExt(data_stage1(31,24),16), ZeroExt(lsu_data( 7, 0),16),    ZeroExt(lsu_data(15, 8),16),    ZeroExt(lsu_data(23,16),16),    ZeroExt(lsu_data(31,24),16) )
+    "b000".U -> Cat5( SignZeroExt(lsu_data( 7, 0),isSign,16), SignZeroExt(lsu_data(15, 8),isSign,16), SignZeroExt(lsu_data(23,16),isSign,16), SignZeroExt(lsu_data(31,24),isSign,16), SignZeroExt(lsu_data(39,32),isSign,16) ),
+    "b001".U -> Cat5( SignZeroExt(lsu_data(15, 8),isSign,16), SignZeroExt(lsu_data(23,16),isSign,16), SignZeroExt(lsu_data(31,24),isSign,16), SignZeroExt(lsu_data(39,32),isSign,16), SignZeroExt(lsu_data(47,40),isSign,16) ),
+    "b010".U -> Cat5( SignZeroExt(lsu_data(23,16),isSign,16), SignZeroExt(lsu_data(31,24),isSign,16), SignZeroExt(lsu_data(39,32),isSign,16), SignZeroExt(lsu_data(47,40),isSign,16), SignZeroExt(lsu_data(55,48),isSign,16) ),
+    "b011".U -> Cat5( SignZeroExt(lsu_data(31,24),isSign,16), SignZeroExt(lsu_data(39,32),isSign,16), SignZeroExt(lsu_data(47,40),isSign,16), SignZeroExt(lsu_data(55,48),isSign,16), SignZeroExt(lsu_data(63,56),isSign,16) ),
+    "b100".U -> Cat5( SignZeroExt(data_stage1( 7, 0),isSign,16), SignZeroExt(data_stage1(15, 8),isSign,16), SignZeroExt(data_stage1(23,16),isSign,16), SignZeroExt(data_stage1(31,24),isSign,16), SignZeroExt(lsu_data( 7, 0),isSign,16) ),
+    "b101".U -> Cat5( SignZeroExt(data_stage1(15, 8),isSign,16), SignZeroExt(data_stage1(23,16),isSign,16), SignZeroExt(data_stage1(31,24),isSign,16), SignZeroExt(lsu_data( 7, 0),isSign,16),    SignZeroExt(lsu_data(15, 8),isSign,16) ),
+    "b110".U -> Cat5( SignZeroExt(data_stage1(23,16),isSign,16), SignZeroExt(data_stage1(31,24),isSign,16), SignZeroExt(lsu_data( 7, 0),isSign,16),    SignZeroExt(lsu_data(15, 8),isSign,16),    SignZeroExt(lsu_data(23,16),isSign,16) ),
+    "b111".U -> Cat5( SignZeroExt(data_stage1(31,24),isSign,16), SignZeroExt(lsu_data( 7, 0),isSign,16),    SignZeroExt(lsu_data(15, 8),isSign,16),    SignZeroExt(lsu_data(23,16),isSign,16),    SignZeroExt(lsu_data(31,24),isSign,16) )
   ))
   // Int4
   val int4_src1 = Cat("b0".U(1.W), Cat(src1(XLEN-1, 3), "b00".U(2.W)))
@@ -132,14 +139,14 @@ class CNNFU extends NutCoreModule {
   val int4_func = Mux(state === s_stage2, LSUOpType.lhu, Mux(src1(2)===1.U, LSUOpType.lhu, LSUOpType.lwu))
   val int4_stage2_valid = (src1(2,0) +& io.length_k(2,0)) >= 9.U(4.W)
   val int4_load_data = LookupTree(src1(2,0), List(
-    "b000".U -> Cat5( ZeroExt(lsu_data( 3, 0),16), ZeroExt(lsu_data( 7, 4),16), ZeroExt(lsu_data(11, 8),16), ZeroExt(lsu_data(15,12),16), ZeroExt(lsu_data(19,16),16) ),
-    "b001".U -> Cat5( ZeroExt(lsu_data( 7, 4),16), ZeroExt(lsu_data(11, 8),16), ZeroExt(lsu_data(15,12),16), ZeroExt(lsu_data(19,16),16), ZeroExt(lsu_data(23,20),16) ),
-    "b010".U -> Cat5( ZeroExt(lsu_data(11, 8),16), ZeroExt(lsu_data(15,12),16), ZeroExt(lsu_data(19,16),16), ZeroExt(lsu_data(23,20),16), ZeroExt(lsu_data(27,24),16) ),
-    "b011".U -> Cat5( ZeroExt(lsu_data(15,12),16), ZeroExt(lsu_data(19,16),16), ZeroExt(lsu_data(23,20),16), ZeroExt(lsu_data(27,24),16), ZeroExt(lsu_data(31,28),16) ),
-    "b100".U -> Cat5( ZeroExt(data_stage1( 3, 0),16), ZeroExt(data_stage1( 7, 4),16), ZeroExt(data_stage1(11, 8),16), ZeroExt(data_stage1(15,12),16), ZeroExt(lsu_data( 3, 0),16) ),
-    "b101".U -> Cat5( ZeroExt(data_stage1( 7, 4),16), ZeroExt(data_stage1(11, 8),16), ZeroExt(data_stage1(15,12),16), ZeroExt(lsu_data( 3, 0),16),    ZeroExt(lsu_data( 7, 4),16) ),
-    "b110".U -> Cat5( ZeroExt(data_stage1(11, 8),16), ZeroExt(data_stage1(15,12),16), ZeroExt(lsu_data( 3, 0),16),    ZeroExt(lsu_data( 7, 4),16),    ZeroExt(lsu_data(11, 8),16) ),
-    "b111".U -> Cat5( ZeroExt(data_stage1(15,12),16), ZeroExt(lsu_data( 3, 0),16),    ZeroExt(lsu_data( 7, 4),16),    ZeroExt(lsu_data(11, 8),16),    ZeroExt(lsu_data(15,12),16) )
+    "b000".U -> Cat5( SignZeroExt(lsu_data( 3, 0),isSign,16), SignZeroExt(lsu_data( 7, 4),isSign,16), SignZeroExt(lsu_data(11, 8),isSign,16), SignZeroExt(lsu_data(15,12),isSign,16), SignZeroExt(lsu_data(19,16),isSign,16) ),
+    "b001".U -> Cat5( SignZeroExt(lsu_data( 7, 4),isSign,16), SignZeroExt(lsu_data(11, 8),isSign,16), SignZeroExt(lsu_data(15,12),isSign,16), SignZeroExt(lsu_data(19,16),isSign,16), SignZeroExt(lsu_data(23,20),isSign,16) ),
+    "b010".U -> Cat5( SignZeroExt(lsu_data(11, 8),isSign,16), SignZeroExt(lsu_data(15,12),isSign,16), SignZeroExt(lsu_data(19,16),isSign,16), SignZeroExt(lsu_data(23,20),isSign,16), SignZeroExt(lsu_data(27,24),isSign,16) ),
+    "b011".U -> Cat5( SignZeroExt(lsu_data(15,12),isSign,16), SignZeroExt(lsu_data(19,16),isSign,16), SignZeroExt(lsu_data(23,20),isSign,16), SignZeroExt(lsu_data(27,24),isSign,16), SignZeroExt(lsu_data(31,28),isSign,16) ),
+    "b100".U -> Cat5( SignZeroExt(data_stage1( 3, 0),isSign,16), SignZeroExt(data_stage1( 7, 4),isSign,16), SignZeroExt(data_stage1(11, 8),isSign,16), SignZeroExt(data_stage1(15,12),isSign,16), SignZeroExt(lsu_data( 3, 0),isSign,16) ),
+    "b101".U -> Cat5( SignZeroExt(data_stage1( 7, 4),isSign,16), SignZeroExt(data_stage1(11, 8),isSign,16), SignZeroExt(data_stage1(15,12),isSign,16), SignZeroExt(lsu_data( 3, 0),isSign,16),    SignZeroExt(lsu_data( 7, 4),isSign,16) ),
+    "b110".U -> Cat5( SignZeroExt(data_stage1(11, 8),isSign,16), SignZeroExt(data_stage1(15,12),isSign,16), SignZeroExt(lsu_data( 3, 0),isSign,16),    SignZeroExt(lsu_data( 7, 4),isSign,16),    SignZeroExt(lsu_data(11, 8),isSign,16) ),
+    "b111".U -> Cat5( SignZeroExt(data_stage1(15,12),isSign,16), SignZeroExt(lsu_data( 3, 0),isSign,16),    SignZeroExt(lsu_data( 7, 4),isSign,16),    SignZeroExt(lsu_data(11, 8),isSign,16),    SignZeroExt(lsu_data(15,12),isSign,16) )
   ))
   // Int2
   val int2_src1 = Cat("b00".U(2.W), Cat(src1(XLEN-1, 3), "b0".U(1.W)))
@@ -149,14 +156,14 @@ class CNNFU extends NutCoreModule {
   val int2_func = Mux(state === s_stage2, LSUOpType.lbu, Mux(src1(2)===1.U, LSUOpType.lbu, LSUOpType.lhu))
   val int2_stage2_valid = (src1(2,0) +& io.length_k(2,0)) >= 9.U(4.W)
   val int2_load_data = LookupTree(src1(2,0), List(
-    "b000".U -> Cat5( ZeroExt(lsu_data( 1, 0),16), ZeroExt(lsu_data( 3, 2),16), ZeroExt(lsu_data( 5, 4),16), ZeroExt(lsu_data( 7, 6),16), ZeroExt(lsu_data( 9, 8),16) ),
-    "b001".U -> Cat5( ZeroExt(lsu_data( 3, 2),16), ZeroExt(lsu_data( 5, 4),16), ZeroExt(lsu_data( 7, 6),16), ZeroExt(lsu_data( 9, 8),16), ZeroExt(lsu_data(11,10),16) ),
-    "b010".U -> Cat5( ZeroExt(lsu_data( 5, 4),16), ZeroExt(lsu_data( 7, 6),16), ZeroExt(lsu_data( 9, 8),16), ZeroExt(lsu_data(11,10),16), ZeroExt(lsu_data(13,12),16) ),
-    "b011".U -> Cat5( ZeroExt(lsu_data( 7, 6),16), ZeroExt(lsu_data( 9, 8),16), ZeroExt(lsu_data(11,10),16), ZeroExt(lsu_data(13,12),16), ZeroExt(lsu_data(15,14),16) ),
-    "b100".U -> Cat5( ZeroExt(data_stage1( 1, 0),16), ZeroExt(data_stage1( 3, 2),16), ZeroExt(data_stage1( 5, 4),16), ZeroExt(data_stage1( 7, 6),16), ZeroExt(lsu_data( 1, 0),16) ),
-    "b101".U -> Cat5( ZeroExt(data_stage1( 3, 2),16), ZeroExt(data_stage1( 5, 4),16), ZeroExt(data_stage1( 7, 6),16), ZeroExt(lsu_data( 1, 0),16),    ZeroExt(lsu_data( 3, 2),16) ),
-    "b110".U -> Cat5( ZeroExt(data_stage1( 5, 4),16), ZeroExt(data_stage1( 7, 6),16), ZeroExt(lsu_data( 1, 0),16),    ZeroExt(lsu_data( 3, 2),16),    ZeroExt(lsu_data( 5, 4),16) ),
-    "b111".U -> Cat5( ZeroExt(data_stage1( 7, 6),16), ZeroExt(lsu_data( 1, 0),16),    ZeroExt(lsu_data( 3, 2),16),    ZeroExt(lsu_data( 5, 4),16),    ZeroExt(lsu_data( 7, 6),16) )
+    "b000".U -> Cat5( SignZeroExt(lsu_data( 1, 0),isSign,16), SignZeroExt(lsu_data( 3, 2),isSign,16), SignZeroExt(lsu_data( 5, 4),isSign,16), SignZeroExt(lsu_data( 7, 6),isSign,16), SignZeroExt(lsu_data( 9, 8),isSign,16) ),
+    "b001".U -> Cat5( SignZeroExt(lsu_data( 3, 2),isSign,16), SignZeroExt(lsu_data( 5, 4),isSign,16), SignZeroExt(lsu_data( 7, 6),isSign,16), SignZeroExt(lsu_data( 9, 8),isSign,16), SignZeroExt(lsu_data(11,10),isSign,16) ),
+    "b010".U -> Cat5( SignZeroExt(lsu_data( 5, 4),isSign,16), SignZeroExt(lsu_data( 7, 6),isSign,16), SignZeroExt(lsu_data( 9, 8),isSign,16), SignZeroExt(lsu_data(11,10),isSign,16), SignZeroExt(lsu_data(13,12),isSign,16) ),
+    "b011".U -> Cat5( SignZeroExt(lsu_data( 7, 6),isSign,16), SignZeroExt(lsu_data( 9, 8),isSign,16), SignZeroExt(lsu_data(11,10),isSign,16), SignZeroExt(lsu_data(13,12),isSign,16), SignZeroExt(lsu_data(15,14),isSign,16) ),
+    "b100".U -> Cat5( SignZeroExt(data_stage1( 1, 0),isSign,16), SignZeroExt(data_stage1( 3, 2),isSign,16), SignZeroExt(data_stage1( 5, 4),isSign,16), SignZeroExt(data_stage1( 7, 6),isSign,16), SignZeroExt(lsu_data( 1, 0),isSign,16) ),
+    "b101".U -> Cat5( SignZeroExt(data_stage1( 3, 2),isSign,16), SignZeroExt(data_stage1( 5, 4),isSign,16), SignZeroExt(data_stage1( 7, 6),isSign,16), SignZeroExt(lsu_data( 1, 0),isSign,16),    SignZeroExt(lsu_data( 3, 2),isSign,16) ),
+    "b110".U -> Cat5( SignZeroExt(data_stage1( 5, 4),isSign,16), SignZeroExt(data_stage1( 7, 6),isSign,16), SignZeroExt(lsu_data( 1, 0),isSign,16),    SignZeroExt(lsu_data( 3, 2),isSign,16),    SignZeroExt(lsu_data( 5, 4),isSign,16) ),
+    "b111".U -> Cat5( SignZeroExt(data_stage1( 7, 6),isSign,16), SignZeroExt(lsu_data( 1, 0),isSign,16),    SignZeroExt(lsu_data( 3, 2),isSign,16),    SignZeroExt(lsu_data( 5, 4),isSign,16),    SignZeroExt(lsu_data( 7, 6),isSign,16) )
   ))
   // Int1
   val int1_src1 = Cat("b000".U(3.W), src1(XLEN-1, 3))
