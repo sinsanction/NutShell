@@ -45,4 +45,4 @@ jobs:
             source ./env.sh
             make clean
             make emu EMU_CXX_EXTRA_FLAGS="-DFIRST_INST_ADDRESS=0x80000000"
-            ./build/emu --no-diff -b 0 -e 0 -C 100000000 -i ./ready-to-run/cnnbench-riscv64-nutshell.bin
+            ./build/emu --no-diff -b 30300 -e 30500 -C 30500 -i ./ready-to-run/cnnbench-riscv64-nutshell.bin
