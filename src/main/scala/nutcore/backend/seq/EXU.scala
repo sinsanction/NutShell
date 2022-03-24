@@ -43,7 +43,7 @@ class EXU(implicit val p: NutCoreConfig) extends NutCoreModule {
   val fuValids = Wire(Vec(FuType.num, Bool()))
   (0 until FuType.num).map (i => fuValids(i) := (fuType === i.U) && io.in.valid && !io.flush)
 
-  Debug("valid:%d, alu_valid:%d lsu_valid:%d mdu_valid:%d csr_valid:%d mou_valid:%d cnn_valid:%d\n", io.in.valid, fuValids(0), fuValids(1), fuValids(2), fuValids(3), fuValids(4), fuValids(5))
+  Debug("valid:%d, type:%d, alu_valid:%d lsu_valid:%d mdu_valid:%d csr_valid:%d mou_valid:%d cnn_valid:%d\n", io.in.valid, fuType, fuValids(0), fuValids(1), fuValids(2), fuValids(3), fuValids(4), fuValids(5))
 
   val alu = Module(new ALU(hasBru = true))
   val aluOut = alu.access(valid = fuValids(FuType.alu), src1 = src1, src2 = src2, func = fuOpType)
@@ -154,6 +154,8 @@ class EXU(implicit val p: NutCoreConfig) extends NutCoreModule {
   BoringUtils.addSource(lsu.io.out.fire(), "perfCntCondMlsuInstr")
   BoringUtils.addSource(mdu.io.out.fire(), "perfCntCondMmduInstr")
   BoringUtils.addSource(csr.io.out.fire(), "perfCntCondMcsrInstr")
+
+  Debug("exe: pc: %x, ins: %x, in_ready: %d, out_valid: %d, cnnres: %d\n", io.in.cf.pc, io.in.cf.instr, io.in.ready, io.out.valid, cnnOut)
 
   if (!p.FPGAPlatform) {
     val cycleCnt = WireInit(0.U(64.W))

@@ -135,7 +135,7 @@ sealed class CacheStage1(implicit val cacheConfig: CacheConfig) extends CacheMod
   val io = IO(new CacheStage1IO)
 
   if (ro) when (io.in.fire()) { assert(!io.in.bits.isWrite()) }
-  Debug(io.in.fire(), "[L1$] cache stage1, addr in: %x, user: %x id: %x\n", io.in.bits.addr, io.in.bits.user.getOrElse(0.U), io.in.bits.id.getOrElse(0.U))
+  //Debug(io.in.fire(), "[L1$] cache stage1, addr in: %x, user: %x id: %x\n", io.in.bits.addr, io.in.bits.user.getOrElse(0.U), io.in.bits.id.getOrElse(0.U))
 
   // read meta array and data array
   val readBusValid = io.in.valid && io.out.ready
@@ -146,7 +146,7 @@ sealed class CacheStage1(implicit val cacheConfig: CacheConfig) extends CacheMod
   io.out.valid := io.in.valid && io.metaReadBus.req.ready && io.dataReadBus.req.ready
   io.in.ready := (!io.in.valid || io.out.fire()) && io.metaReadBus.req.ready && io.dataReadBus.req.ready
 
-  Debug("in.ready = %d, in.valid = %d, out.valid = %d, out.ready = %d, addr = %x, cmd = %x, dataReadBus.req.valid = %d\n", io.in.ready, io.in.valid, io.out.valid, io.out.ready, io.in.bits.addr, io.in.bits.cmd, io.dataReadBus.req.valid)
+  //Debug("in.ready = %d, in.valid = %d, out.valid = %d, out.ready = %d, addr = %x, cmd = %x, dataReadBus.req.valid = %d\n", io.in.ready, io.in.valid, io.out.valid, io.out.ready, io.in.bits.addr, io.in.bits.cmd, io.dataReadBus.req.valid)
 }
 
 sealed class Stage2IO(implicit val cacheConfig: CacheConfig) extends CacheBundle {
@@ -229,8 +229,8 @@ sealed class CacheStage2(implicit val cacheConfig: CacheConfig) extends CacheMod
   io.out.valid := io.in.valid
   io.in.ready := !io.in.valid || io.out.fire()
 
-  Debug("[isFD:%d isFDreg:%d inFire:%d invalid:%d \n", isForwardData, isForwardDataReg, io.in.fire(), io.in.valid)
-  Debug("[isFM:%d isFMreg:%d metawreq:%x widx:%x ridx:%x \n", isForwardMeta, isForwardMetaReg, io.metaWriteBus.req.valid, io.metaWriteBus.req.bits.setIdx, getMetaIdx(req.addr))
+  //Debug("[isFD:%d isFDreg:%d inFire:%d invalid:%d \n", isForwardData, isForwardDataReg, io.in.fire(), io.in.valid)
+  //Debug("[isFM:%d isFMreg:%d metawreq:%x widx:%x ridx:%x \n", isForwardMeta, isForwardMetaReg, io.metaWriteBus.req.valid, io.metaWriteBus.req.bits.setIdx, getMetaIdx(req.addr))
 }
 
 // writeback
@@ -463,18 +463,18 @@ sealed class CacheStage3(implicit val cacheConfig: CacheConfig) extends CacheMod
   assert(!(metaHitWriteBus.req.valid && metaRefillWriteBus.req.valid))
   assert(!(dataHitWriteBus.req.valid && dataRefillWriteBus.req.valid))
   assert(!(!ro.B && io.flush), "only allow to flush icache")
-  Debug(" metaread idx %x waymask %b metas %x%x:%x %x%x:%x %x%x:%x %x%x:%x %x\n", getMetaIdx(req.addr), io.in.bits.waymask.asUInt, io.in.bits.metas(0).valid, io.in.bits.metas(0).dirty, io.in.bits.metas(0).tag, io.in.bits.metas(1).valid, io.in.bits.metas(1).dirty, io.in.bits.metas(1).tag, io.in.bits.metas(2).valid, io.in.bits.metas(2).dirty, io.in.bits.metas(2).tag, io.in.bits.metas(3).valid, io.in.bits.metas(3).dirty, io.in.bits.metas(3).tag, io.in.bits.datas.asUInt)
-  Debug(io.metaWriteBus.req.fire(), "%d: [" + cacheName + " S3]: metawrite idx %x wmask %b meta %x%x:%x\n", GTimer(), io.metaWriteBus.req.bits.setIdx, io.metaWriteBus.req.bits.waymask.get, io.metaWriteBus.req.bits.data.valid, io.metaWriteBus.req.bits.data.dirty, io.metaWriteBus.req.bits.data.tag)
-  Debug(" in.ready = %d, in.valid = %d, hit = %x, state = %d, addr = %x cmd:%d probe:%d isFinish:%d\n", io.in.ready, io.in.valid, hit, state, req.addr, req.cmd, probe, io.isFinish)
-  Debug(" out.valid:%d rdata:%x cmd:%d user:%x id:%x \n", io.out.valid, io.out.bits.rdata, io.out.bits.cmd, io.out.bits.user.getOrElse(0.U), io.out.bits.id.getOrElse(0.U))
-  Debug(" DHW: (%d, %d), data:%x setIdx:%x MHW:(%d, %d)\n", dataHitWriteBus.req.valid, dataHitWriteBus.req.ready, dataHitWriteBus.req.bits.data.asUInt, dataHitWriteBus.req.bits.setIdx, metaHitWriteBus.req.valid, metaHitWriteBus.req.ready)
-  Debug(" DreadCache: %x \n", io.in.bits.datas.asUInt)
-  Debug(" useFD:%d isFD:%d FD:%x DreadArray:%x dataRead:%x inwaymask:%x FDwaymask:%x \n", useForwardData, io.in.bits.isForwardData, io.in.bits.forwardData.data.data, dataReadArray, dataRead, io.in.bits.waymask, io.in.bits.forwardData.waymask.getOrElse("b1".U))
-  Debug(io.dataWriteBus.req.fire(), "[WB] waymask: %b data:%x setIdx:%x\n", 
-    io.dataWriteBus.req.bits.waymask.get.asUInt, io.dataWriteBus.req.bits.data.asUInt, io.dataWriteBus.req.bits.setIdx)
-  Debug((state === s_memWriteReq) && io.mem.req.fire(), "[COUTW] cnt %x addr %x data %x cmd %x size %x wmask %x tag %x idx %x waymask %b \n", writeBeatCnt.value, io.mem.req.bits.addr, io.mem.req.bits.wdata, io.mem.req.bits.cmd, io.mem.req.bits.size, io.mem.req.bits.wmask, addr.tag, getMetaIdx(req.addr), io.in.bits.waymask)
-  Debug((state === s_memReadReq) && io.mem.req.fire(), "[COUTR] addr %x tag %x idx %x waymask %b \n", io.mem.req.bits.addr, addr.tag, getMetaIdx(req.addr), io.in.bits.waymask)
-  Debug((state === s_memReadResp) && io.mem.resp.fire(), "[COUTR] cnt %x data %x tag %x idx %x waymask %b \n", readBeatCnt.value, io.mem.resp.bits.rdata, addr.tag, getMetaIdx(req.addr), io.in.bits.waymask)
+  //Debug(" metaread idx %x waymask %b metas %x%x:%x %x%x:%x %x%x:%x %x%x:%x %x\n", getMetaIdx(req.addr), io.in.bits.waymask.asUInt, io.in.bits.metas(0).valid, io.in.bits.metas(0).dirty, io.in.bits.metas(0).tag, io.in.bits.metas(1).valid, io.in.bits.metas(1).dirty, io.in.bits.metas(1).tag, io.in.bits.metas(2).valid, io.in.bits.metas(2).dirty, io.in.bits.metas(2).tag, io.in.bits.metas(3).valid, io.in.bits.metas(3).dirty, io.in.bits.metas(3).tag, io.in.bits.datas.asUInt)
+  //Debug(io.metaWriteBus.req.fire(), "%d: [" + cacheName + " S3]: metawrite idx %x wmask %b meta %x%x:%x\n", GTimer(), io.metaWriteBus.req.bits.setIdx, io.metaWriteBus.req.bits.waymask.get, io.metaWriteBus.req.bits.data.valid, io.metaWriteBus.req.bits.data.dirty, io.metaWriteBus.req.bits.data.tag)
+  //Debug(" in.ready = %d, in.valid = %d, hit = %x, state = %d, addr = %x cmd:%d probe:%d isFinish:%d\n", io.in.ready, io.in.valid, hit, state, req.addr, req.cmd, probe, io.isFinish)
+  //Debug(" out.valid:%d rdata:%x cmd:%d user:%x id:%x \n", io.out.valid, io.out.bits.rdata, io.out.bits.cmd, io.out.bits.user.getOrElse(0.U), io.out.bits.id.getOrElse(0.U))
+  //Debug(" DHW: (%d, %d), data:%x setIdx:%x MHW:(%d, %d)\n", dataHitWriteBus.req.valid, dataHitWriteBus.req.ready, dataHitWriteBus.req.bits.data.asUInt, dataHitWriteBus.req.bits.setIdx, metaHitWriteBus.req.valid, metaHitWriteBus.req.ready)
+  //Debug(" DreadCache: %x \n", io.in.bits.datas.asUInt)
+  //Debug(" useFD:%d isFD:%d FD:%x DreadArray:%x dataRead:%x inwaymask:%x FDwaymask:%x \n", useForwardData, io.in.bits.isForwardData, io.in.bits.forwardData.data.data, dataReadArray, dataRead, io.in.bits.waymask, io.in.bits.forwardData.waymask.getOrElse("b1".U))
+  //Debug(io.dataWriteBus.req.fire(), "[WB] waymask: %b data:%x setIdx:%x\n", 
+    //io.dataWriteBus.req.bits.waymask.get.asUInt, io.dataWriteBus.req.bits.data.asUInt, io.dataWriteBus.req.bits.setIdx)
+  //Debug((state === s_memWriteReq) && io.mem.req.fire(), "[COUTW] cnt %x addr %x data %x cmd %x size %x wmask %x tag %x idx %x waymask %b \n", writeBeatCnt.value, io.mem.req.bits.addr, io.mem.req.bits.wdata, io.mem.req.bits.cmd, io.mem.req.bits.size, io.mem.req.bits.wmask, addr.tag, getMetaIdx(req.addr), io.in.bits.waymask)
+  //Debug((state === s_memReadReq) && io.mem.req.fire(), "[COUTR] addr %x tag %x idx %x waymask %b \n", io.mem.req.bits.addr, addr.tag, getMetaIdx(req.addr), io.in.bits.waymask)
+  //Debug((state === s_memReadResp) && io.mem.resp.fire(), "[COUTR] cnt %x data %x tag %x idx %x waymask %b \n", readBeatCnt.value, io.mem.resp.bits.rdata, addr.tag, getMetaIdx(req.addr), io.in.bits.waymask)
 }
 
 class Cache(implicit val cacheConfig: CacheConfig) extends CacheModule with HasCacheIO {
@@ -545,11 +545,11 @@ class Cache(implicit val cacheConfig: CacheConfig) extends CacheModule with HasC
     BoringUtils.addSource(s1.io.in.fire(), "perfCntCondM" + cacheName + "Req")
   }
   // io.in.dump(cacheName + ".in")
-  Debug("InReq(%d, %d) InResp(%d, %d) \n", io.in.req.valid, io.in.req.ready, io.in.resp.valid, io.in.resp.ready)
-  Debug("{IN s1:(%d,%d), s2:(%d,%d), s3:(%d,%d)} {OUT s1:(%d,%d), s2:(%d,%d), s3:(%d,%d)}\n", s1.io.in.valid, s1.io.in.ready, s2.io.in.valid, s2.io.in.ready, s3.io.in.valid, s3.io.in.ready, s1.io.out.valid, s1.io.out.ready, s2.io.out.valid, s2.io.out.ready, s3.io.out.valid, s3.io.out.ready)
-  when (s1.io.in.valid) { Debug(p"[${cacheName}.S1]: ${s1.io.in.bits}\n") }
-  when (s2.io.in.valid) { Debug(p"[${cacheName}.S2]: ${s2.io.in.bits.req}\n") }
-  when (s3.io.in.valid) { Debug(p"[${cacheName}.S3]: ${s3.io.in.bits.req}\n") }
+  //Debug("InReq(%d, %d) InResp(%d, %d) \n", io.in.req.valid, io.in.req.ready, io.in.resp.valid, io.in.resp.ready)
+  //Debug("{IN s1:(%d,%d), s2:(%d,%d), s3:(%d,%d)} {OUT s1:(%d,%d), s2:(%d,%d), s3:(%d,%d)}\n", s1.io.in.valid, s1.io.in.ready, s2.io.in.valid, s2.io.in.ready, s3.io.in.valid, s3.io.in.ready, s1.io.out.valid, s1.io.out.ready, s2.io.out.valid, s2.io.out.ready, s3.io.out.valid, s3.io.out.ready)
+  //when (s1.io.in.valid) { Debug(p"[${cacheName}.S1]: ${s1.io.in.bits}\n") }
+  //when (s2.io.in.valid) { Debug(p"[${cacheName}.S2]: ${s2.io.in.bits.req}\n") }
+  //when (s3.io.in.valid) { Debug(p"[${cacheName}.S3]: ${s3.io.in.bits.req}\n") }
   //s3.io.mem.dump(cacheName + ".mem")
 }
 
@@ -626,10 +626,10 @@ class Cache_fake(implicit val cacheConfig: CacheConfig) extends CacheModule with
   io.empty := false.B
   io.out.coh := DontCare
 
-  Debug(io.in.req.fire(), p"in.req: ${io.in.req.bits}\n")
-  Debug(io.out.mem.req.fire(), p"out.mem.req: ${io.out.mem.req.bits}\n")
-  Debug(io.out.mem.resp.fire(), p"out.mem.resp: ${io.out.mem.resp.bits}\n")
-  Debug(io.in.resp.fire(), p"in.resp: ${io.in.resp.bits}\n")
+  //Debug(io.in.req.fire(), p"in.req: ${io.in.req.bits}\n")
+  //Debug(io.out.mem.req.fire(), p"out.mem.req: ${io.out.mem.req.bits}\n")
+  //Debug(io.out.mem.resp.fire(), p"out.mem.resp: ${io.out.mem.resp.bits}\n")
+  //Debug(io.in.resp.fire(), p"in.resp: ${io.in.resp.bits}\n")
 }
 
 class Cache_dummy(implicit val cacheConfig: CacheConfig) extends CacheModule with HasCacheIO {

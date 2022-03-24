@@ -228,7 +228,7 @@ class CNNFU extends NutCoreModule {
   io.loadv.func := Mux(isLoadD || isLoadP, loadv_func, LSUOpType.ld)
   val lv_valid = Mux(isLoadW, lsu_valid, Mux((isLoadD || isLoadP) && vwidth_valid && k_valid, loadv_valid, true.B))
 
-  Debug(valid, "lv_valid: %d, data00: %d, data01: %d, data02: %d, data03: %d, data04: %d\n", lv_valid, loadv_data_elem(0), loadv_data_elem(1), loadv_data_elem(2), loadv_data_elem(3), loadv_data_elem(4))
+  Debug(valid, "lv_valid: %d, data00: %d, data01: %d, data02: %d, data03: %d, data04: %d, loaddata: %x\n", lv_valid, loadv_data_elem(0), loadv_data_elem(1), loadv_data_elem(2), loadv_data_elem(3), loadv_data_elem(4), lsu_data)
 
   vreg_mdu.io.vaddr       := io.vec_addr
   vreg_mdu.io.vtag        := io.vtag
