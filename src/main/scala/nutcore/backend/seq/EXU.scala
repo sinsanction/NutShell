@@ -43,6 +43,8 @@ class EXU(implicit val p: NutCoreConfig) extends NutCoreModule {
   val fuValids = Wire(Vec(FuType.num, Bool()))
   (0 until FuType.num).map (i => fuValids(i) := (fuType === i.U) && io.in.valid && !io.flush)
 
+  Debug("valid:%d, alu_valid:%d lsu_valid:%d mdu_valid:%d csr_valid:%d mou_valid:%d cnn_valid:%d\n", io.in.valid, fuValids(0), fuValids(1), fuValids(2), fuValids(3), fuValids(4), fuValids(5))
+
   val alu = Module(new ALU(hasBru = true))
   val aluOut = alu.access(valid = fuValids(FuType.alu), src1 = src1, src2 = src2, func = fuOpType)
   alu.io.cfIn := io.in.bits.cf
