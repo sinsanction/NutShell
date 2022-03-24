@@ -143,11 +143,11 @@ class CNNFU extends NutCoreModule {
 
   // ALL
   val LoadvCtrlTable = List(
-    "b10000".U -> (int16_src1, int16_src2, int16_func, int16_load_data, int16_stage2_valid),
-    "b01000".U -> (int8_src1, int8_src2, int8_func, int8_stage2_valid),
-    "b00100".U -> (int4_src1, int4_src2, int4_func, int4_stage2_valid),
-    "b00010".U -> (int2_src1, int2_src2, int2_func, int2_stage2_valid),
-    "b00001".U -> (int1_src1, int1_src2, int1_func, int1_stage2_valid)
+    "b10000".U -> (int16_src1, int16_src2, int16_func, int16_stage2_valid),
+    "b01000".U -> (int8_src1,  int8_src2,  int8_func,  int8_stage2_valid),
+    "b00100".U -> (int4_src1,  int4_src2,  int4_func,  int4_stage2_valid),
+    "b00010".U -> (int2_src1,  int2_src2,  int2_func,  int2_stage2_valid),
+    "b00001".U -> (int1_src1,  int1_src2,  int1_func,  int1_stage2_valid)
   )
   val loadv_src1   = LookupTreeDefault(intNumVec, 0.U(XLEN.W),   LoadvCtrlTable.map(p => (p._1, p._2._1)))
   val loadv_src2   = LookupTreeDefault(intNumVec, 0.U(XLEN.W),   LoadvCtrlTable.map(p => (p._1, p._2._2)))
