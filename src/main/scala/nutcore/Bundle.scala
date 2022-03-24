@@ -35,6 +35,7 @@ class CtrlSignalIO extends NutCoreBundle {
   val isBlocked = Output(Bool())   // This inst requires pipeline to be blocked
   // for RV-CNN
   val vtag = Output(UInt(3.W))
+  val vec_addr = Output(UInt(5.W))
   val length_k = Output(UInt(4.W))
   val algorithm = Output(UInt(2.W))
 }

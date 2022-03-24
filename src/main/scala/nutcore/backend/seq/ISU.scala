@@ -95,6 +95,7 @@ class ISU(implicit val p: NutCoreConfig) extends NutCoreModule with HasRegFilePa
 
   Debug("isu: pc: %x, ins: %x, in_ready: %d, in_valid: %d, out_valid: %d\n", io.in(0).bits.cf.pc, io.in(0).bits.cf.instr, io.in(0).ready, io.in(0).valid, io.out.valid)
   Debug("src1Ready: %d, src2Ready: %d, rfSrc1: %d, rfSrc2: %d, rfDest1: %d, rfWen: %d\n", src1Ready, src2Ready, rfSrc1, rfSrc2, rfDest1, io.in(0).bits.ctrl.rfWen)
+  Debug("sb: %x\n", sb.busy)
 
   // read after write
   BoringUtils.addSource(io.in(0).valid && !io.out.valid, "perfCntCondMrawStall")
