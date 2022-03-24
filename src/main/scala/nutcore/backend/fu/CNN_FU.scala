@@ -103,7 +103,7 @@ class CNNFU extends NutCoreModule {
   // state reg
   val s_stage1 :: s_stage2 :: Nil = Enum(2)
   val state = RegInit(s_stage1)
-  val data_stage1 = RegInit(0.U(XLEN.W))
+  val data_stage1_reg = RegInit(0.U(XLEN.W))
 
   // Int16
   val int16_src1 = Cat(src1(XLEN-1, 3), "b000".U(3.W))
@@ -112,12 +112,6 @@ class CNNFU extends NutCoreModule {
   val int16_src2 = Mux(state === s_stage2, int16_src2_stage2, int16_src2_stage1)
   val int16_func = LSUOpType.ld
   val int16_stage2_valid = (src1(2,1) +& io.length_k(2,0)) >= 5.U(4.W)
-  val int16_load_data = LookupTree(src1(2,1), List(
-    "b00".U -> Cat(lsu_data(15,0), data_stage1),
-    "b01".U -> Cat(lsu_data(31,0), data_stage1(63,16)),
-    "b10".U -> Cat(lsu_data(47,0), data_stage1(63,32)),
-    "b11".U -> Cat(lsu_data, data_stage1(63,48))
-  ))
   // Int8
   val int8_src1 = Cat(src1(XLEN-1, 3), "b000".U(3.W))
   val int8_src2_stage1 = Mux(src1(2)===1.U, 4.U(XLEN.W), 0.U(XLEN.W))
@@ -125,6 +119,61 @@ class CNNFU extends NutCoreModule {
   val int8_src2 = Mux(state === s_stage2, int8_src2_stage2, int8_src2_stage1)
   val int8_func = Mux(state === s_stage2, LSUOpType.lwu, Mux(src1(2)===1.U, LSUOpType.lwu, LSUOpType.ld))
   val int8_stage2_valid = (src1(2,0) +& io.length_k(2,0)) >= 9.U(4.W)
+  // Int4
+  val int4_src1 = Cat("b0".U(1.W), Cat(src1(XLEN-1, 3), "b00".U(2.W)))
+  val int4_src2_stage1 = Mux(src1(2)===1.U, 2.U(XLEN.W), 0.U(XLEN.W))
+  val int4_src2_stage2 = 4.U(XLEN.W)
+  val int4_src2 = Mux(state === s_stage2, int4_src2_stage2, int4_src2_stage1)
+  val int4_func = Mux(state === s_stage2, LSUOpType.lhu, Mux(src1(2)===1.U, LSUOpType.lhu, LSUOpType.lwu))
+  val int4_stage2_valid = (src1(2,0) +& io.length_k(2,0)) >= 9.U(4.W)
+  // Int2
+  val int2_src1 = Cat("b00".U(2.W), Cat(src1(XLEN-1, 3), "b0".U(1.W)))
+  val int2_src2_stage1 = Mux(src1(2)===1.U, 1.U(XLEN.W), 0.U(XLEN.W))
+  val int2_src2_stage2 = 2.U(XLEN.W)
+  val int2_src2 = Mux(state === s_stage2, int2_src2_stage2, int2_src2_stage1)
+  val int2_func = Mux(state === s_stage2, LSUOpType.lbu, Mux(src1(2)===1.U, LSUOpType.lbu, LSUOpType.lhu))
+  val int2_stage2_valid = (src1(2,0) +& io.length_k(2,0)) >= 9.U(4.W)
+  // Int1
+  val int1_src1 = Cat("b000".U(3.W), src1(XLEN-1, 3))
+  val int1_src2_stage1 = 0.U(XLEN.W)
+  val int1_src2_stage2 = 1.U(XLEN.W)
+  val int1_src2 = Mux(state === s_stage2, int1_src2_stage2, int1_src2_stage1)
+  val int1_func = LSUOpType.lbu
+  val int1_stage2_valid = (src1(2,0) +& io.length_k(2,0)) >= 9.U(4.W)
+
+  // ALL
+  val LoadvCtrlTable = List(
+    "b10000".U -> (int16_src1, int16_src2, int16_func, int16_load_data, int16_stage2_valid),
+    "b01000".U -> (int8_src1, int8_src2, int8_func, int8_stage2_valid),
+    "b00100".U -> (int4_src1, int4_src2, int4_func, int4_stage2_valid),
+    "b00010".U -> (int2_src1, int2_src2, int2_func, int2_stage2_valid),
+    "b00001".U -> (int1_src1, int1_src2, int1_func, int1_stage2_valid)
+  )
+  val loadv_src1   = LookupTreeDefault(intNumVec, 0.U(XLEN.W),   LoadvCtrlTable.map(p => (p._1, p._2._1)))
+  val loadv_src2   = LookupTreeDefault(intNumVec, 0.U(XLEN.W),   LoadvCtrlTable.map(p => (p._1, p._2._2)))
+  val loadv_func   = LookupTreeDefault(intNumVec, 0.U(7.W),      LoadvCtrlTable.map(p => (p._1, p._2._3)))
+  val stage2_valid = LookupTreeDefault(intNumVec, false.B,       LoadvCtrlTable.map(p => (p._1, p._2._4)))
+
+  // state reg
+  switch (state) {
+    is (s_stage1) {
+      when ( (isLoadD || isLoadP) && stage2_valid && lsu_valid && !lsu_ex ) { state := s_stage2 }
+    }
+    is (s_stage2) {
+      when ( lsu_valid ) { state := s_stage1 }
+    }
+  }
+  when ( (state === s_stage1) && (isLoadD || isLoadP) && stage2_valid && lsu_valid && !lsu_ex ) { data_stage1_reg := lsu_data }
+
+  // load data
+  val data_stage1 = Mux(stage2_valid, data_stage1_reg, lsu_data)
+
+  val int16_load_data = LookupTree(src1(2,1), List(
+    "b00".U -> Cat(lsu_data(15,0), data_stage1),
+    "b01".U -> Cat(lsu_data(31,0), data_stage1(63,16)),
+    "b10".U -> Cat(lsu_data(47,0), data_stage1(63,32)),
+    "b11".U -> Cat(lsu_data, data_stage1(63,48))
+  ))
   val int8_load_data = LookupTree(src1(2,0), List(
     "b000".U -> Cat5( SignZeroExt(lsu_data( 7, 0),isSign,16), SignZeroExt(lsu_data(15, 8),isSign,16), SignZeroExt(lsu_data(23,16),isSign,16), SignZeroExt(lsu_data(31,24),isSign,16), SignZeroExt(lsu_data(39,32),isSign,16) ),
     "b001".U -> Cat5( SignZeroExt(lsu_data(15, 8),isSign,16), SignZeroExt(lsu_data(23,16),isSign,16), SignZeroExt(lsu_data(31,24),isSign,16), SignZeroExt(lsu_data(39,32),isSign,16), SignZeroExt(lsu_data(47,40),isSign,16) ),
@@ -135,13 +184,6 @@ class CNNFU extends NutCoreModule {
     "b110".U -> Cat5( SignZeroExt(data_stage1(23,16),isSign,16), SignZeroExt(data_stage1(31,24),isSign,16), SignZeroExt(lsu_data( 7, 0),isSign,16),    SignZeroExt(lsu_data(15, 8),isSign,16),    SignZeroExt(lsu_data(23,16),isSign,16) ),
     "b111".U -> Cat5( SignZeroExt(data_stage1(31,24),isSign,16), SignZeroExt(lsu_data( 7, 0),isSign,16),    SignZeroExt(lsu_data(15, 8),isSign,16),    SignZeroExt(lsu_data(23,16),isSign,16),    SignZeroExt(lsu_data(31,24),isSign,16) )
   ))
-  // Int4
-  val int4_src1 = Cat("b0".U(1.W), Cat(src1(XLEN-1, 3), "b00".U(2.W)))
-  val int4_src2_stage1 = Mux(src1(2)===1.U, 2.U(XLEN.W), 0.U(XLEN.W))
-  val int4_src2_stage2 = 4.U(XLEN.W)
-  val int4_src2 = Mux(state === s_stage2, int4_src2_stage2, int4_src2_stage1)
-  val int4_func = Mux(state === s_stage2, LSUOpType.lhu, Mux(src1(2)===1.U, LSUOpType.lhu, LSUOpType.lwu))
-  val int4_stage2_valid = (src1(2,0) +& io.length_k(2,0)) >= 9.U(4.W)
   val int4_load_data = LookupTree(src1(2,0), List(
     "b000".U -> Cat5( SignZeroExt(lsu_data( 3, 0),isSign,16), SignZeroExt(lsu_data( 7, 4),isSign,16), SignZeroExt(lsu_data(11, 8),isSign,16), SignZeroExt(lsu_data(15,12),isSign,16), SignZeroExt(lsu_data(19,16),isSign,16) ),
     "b001".U -> Cat5( SignZeroExt(lsu_data( 7, 4),isSign,16), SignZeroExt(lsu_data(11, 8),isSign,16), SignZeroExt(lsu_data(15,12),isSign,16), SignZeroExt(lsu_data(19,16),isSign,16), SignZeroExt(lsu_data(23,20),isSign,16) ),
@@ -152,13 +194,6 @@ class CNNFU extends NutCoreModule {
     "b110".U -> Cat5( SignZeroExt(data_stage1(11, 8),isSign,16), SignZeroExt(data_stage1(15,12),isSign,16), SignZeroExt(lsu_data( 3, 0),isSign,16),    SignZeroExt(lsu_data( 7, 4),isSign,16),    SignZeroExt(lsu_data(11, 8),isSign,16) ),
     "b111".U -> Cat5( SignZeroExt(data_stage1(15,12),isSign,16), SignZeroExt(lsu_data( 3, 0),isSign,16),    SignZeroExt(lsu_data( 7, 4),isSign,16),    SignZeroExt(lsu_data(11, 8),isSign,16),    SignZeroExt(lsu_data(15,12),isSign,16) )
   ))
-  // Int2
-  val int2_src1 = Cat("b00".U(2.W), Cat(src1(XLEN-1, 3), "b0".U(1.W)))
-  val int2_src2_stage1 = Mux(src1(2)===1.U, 1.U(XLEN.W), 0.U(XLEN.W))
-  val int2_src2_stage2 = 2.U(XLEN.W)
-  val int2_src2 = Mux(state === s_stage2, int2_src2_stage2, int2_src2_stage1)
-  val int2_func = Mux(state === s_stage2, LSUOpType.lbu, Mux(src1(2)===1.U, LSUOpType.lbu, LSUOpType.lhu))
-  val int2_stage2_valid = (src1(2,0) +& io.length_k(2,0)) >= 9.U(4.W)
   val int2_load_data = LookupTree(src1(2,0), List(
     "b000".U -> Cat5( SignZeroExt(lsu_data( 1, 0),isSign,16), SignZeroExt(lsu_data( 3, 2),isSign,16), SignZeroExt(lsu_data( 5, 4),isSign,16), SignZeroExt(lsu_data( 7, 6),isSign,16), SignZeroExt(lsu_data( 9, 8),isSign,16) ),
     "b001".U -> Cat5( SignZeroExt(lsu_data( 3, 2),isSign,16), SignZeroExt(lsu_data( 5, 4),isSign,16), SignZeroExt(lsu_data( 7, 6),isSign,16), SignZeroExt(lsu_data( 9, 8),isSign,16), SignZeroExt(lsu_data(11,10),isSign,16) ),
@@ -169,13 +204,6 @@ class CNNFU extends NutCoreModule {
     "b110".U -> Cat5( SignZeroExt(data_stage1( 5, 4),isSign,16), SignZeroExt(data_stage1( 7, 6),isSign,16), SignZeroExt(lsu_data( 1, 0),isSign,16),    SignZeroExt(lsu_data( 3, 2),isSign,16),    SignZeroExt(lsu_data( 5, 4),isSign,16) ),
     "b111".U -> Cat5( SignZeroExt(data_stage1( 7, 6),isSign,16), SignZeroExt(lsu_data( 1, 0),isSign,16),    SignZeroExt(lsu_data( 3, 2),isSign,16),    SignZeroExt(lsu_data( 5, 4),isSign,16),    SignZeroExt(lsu_data( 7, 6),isSign,16) )
   ))
-  // Int1
-  val int1_src1 = Cat("b000".U(3.W), src1(XLEN-1, 3))
-  val int1_src2_stage1 = 0.U(XLEN.W)
-  val int1_src2_stage2 = 1.U(XLEN.W)
-  val int1_src2 = Mux(state === s_stage2, int1_src2_stage2, int1_src2_stage1)
-  val int1_func = LSUOpType.lbu
-  val int1_stage2_valid = (src1(2,0) +& io.length_k(2,0)) >= 9.U(4.W)
   val int1_load_data = LookupTree(src1(2,0), List(
     "b000".U -> Cat5( ZeroExt(lsu_data(0),16), ZeroExt(lsu_data(1),16), ZeroExt(lsu_data(2),16), ZeroExt(lsu_data(3),16), ZeroExt(lsu_data(4),16) ),
     "b001".U -> Cat5( ZeroExt(lsu_data(1),16), ZeroExt(lsu_data(2),16), ZeroExt(lsu_data(3),16), ZeroExt(lsu_data(4),16), ZeroExt(lsu_data(5),16) ),
@@ -187,30 +215,13 @@ class CNNFU extends NutCoreModule {
     "b111".U -> Cat5( ZeroExt(data_stage1(7),16), ZeroExt(lsu_data(0),16),    ZeroExt(lsu_data(1),16),    ZeroExt(lsu_data(2),16),    ZeroExt(lsu_data(3),16) )
   ))
 
-  // ALL
-  val LoadvCtrlTable = List(
-    "b10000".U -> (int16_src1, int16_src2, int16_func, int16_load_data, int16_stage2_valid),
-    "b01000".U -> (int8_src1, int8_src2, int8_func, int8_load_data, int8_stage2_valid),
-    "b00100".U -> (int4_src1, int4_src2, int4_func, int4_load_data, int4_stage2_valid),
-    "b00010".U -> (int2_src1, int2_src2, int2_func, int2_load_data, int2_stage2_valid),
-    "b00001".U -> (int1_src1, int1_src2, int1_func, int1_load_data, int1_stage2_valid)
-  )
-  val loadv_src1   = LookupTreeDefault(intNumVec, 0.U(XLEN.W),   LoadvCtrlTable.map(p => (p._1, p._2._1)))
-  val loadv_src2   = LookupTreeDefault(intNumVec, 0.U(XLEN.W),   LoadvCtrlTable.map(p => (p._1, p._2._2)))
-  val loadv_func   = LookupTreeDefault(intNumVec, 0.U(7.W),      LoadvCtrlTable.map(p => (p._1, p._2._3)))
-  val loadv_data   = LookupTreeDefault(intNumVec, 0.U((16*5).W), LoadvCtrlTable.map(p => (p._1, p._2._4)))
-  val stage2_valid = LookupTreeDefault(intNumVec, false.B,       LoadvCtrlTable.map(p => (p._1, p._2._5)))
-
-  // state reg
-  switch (state) {
-    is (s_stage1) {
-      when ( (isLoadD || isLoadP) && stage2_valid && lsu_valid && !lsu_ex ) { state := s_stage2 }
-    }
-    is (s_stage2) {
-      when ( lsu_valid ) { state := s_stage1 }
-    }
-  }
-  when ( (state === s_stage1) && (isLoadD || isLoadP) && stage2_valid && lsu_valid && !lsu_ex ) { data_stage1 := lsu_data }
+  val loadv_data   = LookupTreeDefault(intNumVec, 0.U((16*5).W), List(
+    "b10000".U -> int16_load_data,
+    "b01000".U -> int8_load_data,
+    "b00100".U -> int4_load_data,
+    "b00010".U -> int2_load_data,
+    "b00001".U -> int1_load_data
+  ))
 
   // data to vrf
   val loadv_data_elem = Wire(Vec(5, UInt(16.W)))
