@@ -6,6 +6,7 @@ import chisel3.util.experimental.BoringUtils
 
 import utils._
 import top.Settings
+import difftest._
 
 object CNNOpType {
   def conv  = "b0000001".U

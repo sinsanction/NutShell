@@ -5,6 +5,7 @@ import chisel3.util._
 import chisel3.util.experimental.BoringUtils
 
 import utils._
+import difftest._
 
 class BoothEncoderP extends Module {
   val io = IO(new Bundle {
@@ -180,7 +181,7 @@ class WallaceAdder extends Module {
   io.c := out_c.reduce{ (a, b) => Cat(b, a) }
 }
 
-class CNNConvSub25 extends Module {
+class CNNConvSub25 extends NutCoreModule {
   val io = IO(new Bundle {
     val conv_valid = Input(Bool())
     val data_main = Input(Vec(25, UInt(16.W)))
