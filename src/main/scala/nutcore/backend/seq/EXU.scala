@@ -155,7 +155,7 @@ class EXU(implicit val p: NutCoreConfig) extends NutCoreModule {
   BoringUtils.addSource(mdu.io.out.fire(), "perfCntCondMmduInstr")
   BoringUtils.addSource(csr.io.out.fire(), "perfCntCondMcsrInstr")
 
-  Debug("exe: pc: %x, ins: %x, in_ready: %d, out_valid: %d, cnnres: %d\n", io.in.cf.pc, io.in.cf.instr, io.in.ready, io.out.valid, cnnOut)
+  Debug("exe: pc: %x, ins: %x, in_ready: %d, out_valid: %d, cnnres: %d\n", io.in.bits.cf.pc, io.in.bits.cf.instr, io.in.ready, io.out.valid, cnnOut)
 
   if (!p.FPGAPlatform) {
     val cycleCnt = WireInit(0.U(64.W))
