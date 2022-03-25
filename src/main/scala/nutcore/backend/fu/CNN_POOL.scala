@@ -25,13 +25,13 @@ class CNNPoolAvg(length: Int) extends Module {
   val sum = Wire(UInt(21.W))
   sum := io.data_main.reduce(_ +& _)
 
-  val div4 = sum >> 2
+  val div4 = (sum >> 2) + sum(1)
 
   val mul_res = Wire(UInt(42.W))
   mul_res := sum * 1864135.U(21.W)
   val div9 = (mul_res >> 24.U) + mul_res(23)
 
-  val div16 = sum >> 4
+  val div16 = (sum >> 4) + sum(3)
 
   val mul_res1 = Wire(UInt(51.W))
   val div5 = Wire(UInt(19.W))
