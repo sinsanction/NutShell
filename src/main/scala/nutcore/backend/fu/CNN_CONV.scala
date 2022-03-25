@@ -5,6 +5,7 @@ import chisel3.util._
 import chisel3.util.experimental.BoringUtils
 
 import utils._
+import difftest._
 
 class BoothEncoderP extends Module {
   val io = IO(new Bundle {
@@ -180,7 +181,7 @@ class WallaceAdder extends Module {
   io.c := out_c.reduce{ (a, b) => Cat(b, a) }
 }
 
-class CNNConvSub25 extends Module {
+class CNNConvSub25 extends NutCoreModule {
   val io = IO(new Bundle {
     val conv_valid = Input(Bool())
     val data_main = Input(Vec(25, UInt(16.W)))
@@ -246,6 +247,8 @@ class CNNConvSub25 extends Module {
   res_final_18 := Mux(state === s_stage2, Mux(io.data_kernel_vwidth(3), res_int8, res_int4), res_int21)
   io.data_res := Mux(res_final_18(17, 16) === 0.U, res_final_18(15, 0), Mux(res_final_18(17, 16) === 1.U, 65535.U(16.W), 0.U(16.W)))
   io.data_ok := !stage2_valid
+
+  Debug(io.conv_valid, "conv valid: %d, k_vwidth: %d, state: %d, stage2_valid: %d, data_ok: %d\n", io.conv_valid, io.data_kernel_vwidth, state, stage2_valid, io.data_ok)
 }
 
 class CNNConvIO(length: Int) extends Bundle {
