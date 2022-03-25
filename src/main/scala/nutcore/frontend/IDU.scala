@@ -147,9 +147,11 @@ class Decoder(implicit val p: NutCoreConfig) extends NutCoreModule with HasInstr
     val func3 = instr(14,12)
     when (isLoadV(func3)) {
       io.out.bits.ctrl.rfWen   := false.B
+      io.out.bits.ctrl.rfDest  := 0.U
     }
   }
   io.out.bits.ctrl.vtag      := instr(26,24)
+  io.out.bits.ctrl.vec_addr  := instr(11, 7)
   io.out.bits.ctrl.length_k  := instr(23,20)
   io.out.bits.ctrl.algorithm := instr(16,15)
 

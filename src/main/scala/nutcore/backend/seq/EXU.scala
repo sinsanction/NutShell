@@ -56,8 +56,8 @@ class EXU(implicit val p: NutCoreConfig) extends NutCoreModule {
   val cnnOut = cnnfu.access(valid = fuValids(FuType.cnn), src1 = src1, src2 = src2, func = fuOpType)
   cnnfu.io.imm := io.in.bits.data.imm
   cnnfu.io.vtag := io.in.bits.ctrl.vtag
+  cnnfu.io.vec_addr := io.in.bits.ctrl.vec_addr
   cnnfu.io.length_k := io.in.bits.ctrl.length_k
-  cnnfu.io.vec_addr := io.in.bits.ctrl.rfDest
   cnnfu.io.algorithm := io.in.bits.ctrl.algorithm
   cnnfu.io.out.ready := true.B
 
