@@ -170,5 +170,5 @@ class NutCore(implicit val p: NutCoreConfig) extends NutCoreModule {
     io.mmio <> mmioXbar.io.out
   }
 
-  Debug("------------------------ BACKEND ------------------------\n")
+  //Debug("------------------------ BACKEND ------------------------\n")
 }
