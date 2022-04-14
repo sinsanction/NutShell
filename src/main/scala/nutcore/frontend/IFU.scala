@@ -362,7 +362,7 @@ class IFU_inorder extends NutCoreModule with HasResetVector {
     // printf("[IF1] pc=%x\n", pc)
   }
 
-  Debug(pcUpdate, "[IFUPC] pc:%x pcUpdate:%d npc:%x RedValid:%d RedTarget:%x LJL:%d LJTarget:%x LJ:%d snpc:%x bpValid:%d pnpn:%x \n",pc, pcUpdate, npc, io.redirect.valid,io.redirect.target,crosslineJumpLatch,crosslineJumpTarget,crosslineJump,snpc,bp1.io.out.valid,pnpc)
+  //Debug(pcUpdate, "[IFUPC] pc:%x pcUpdate:%d npc:%x RedValid:%d RedTarget:%x LJL:%d LJTarget:%x LJ:%d snpc:%x bpValid:%d pnpn:%x \n",pc, pcUpdate, npc, io.redirect.valid,io.redirect.target,crosslineJumpLatch,crosslineJumpTarget,crosslineJump,snpc,bp1.io.out.valid,pnpc)
 
   io.flushVec := Mux(io.redirect.valid, "b1111".U, 0.U)
   io.bpFlush := false.B
@@ -376,8 +376,8 @@ class IFU_inorder extends NutCoreModule with HasResetVector {
   io.out.bits := DontCare
     //inst path only uses 32bit inst, get the right inst according to pc(2)
 
-  Debug(io.imem.req.fire(), "[IFI] pc=%x user=%x %x %x %x \n", io.imem.req.bits.addr, io.imem.req.bits.user.getOrElse(0.U), io.redirect.valid, pbrIdx, brIdx)
-  Debug(io.out.fire(), "[IFO] pc=%x inst=%x\n", io.out.bits.pc, io.out.bits.instr)
+  //Debug(io.imem.req.fire(), "[IFI] pc=%x user=%x %x %x %x \n", io.imem.req.bits.addr, io.imem.req.bits.user.getOrElse(0.U), io.redirect.valid, pbrIdx, brIdx)
+  //Debug(io.out.fire(), "[IFO] pc=%x inst=%x\n", io.out.bits.pc, io.out.bits.instr)
 
   // io.out.bits.instr := (if (XLEN == 64) io.imem.resp.bits.rdata.asTypeOf(Vec(2, UInt(32.W)))(io.out.bits.pc(2))
                       //  else io.imem.resp.bits.rdata)

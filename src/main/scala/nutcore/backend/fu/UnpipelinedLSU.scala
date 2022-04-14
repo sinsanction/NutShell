@@ -191,7 +191,7 @@ class UnpipelinedLSU extends NutCoreModule with HasLSUConst {
         io.out.valid               := false.B
         when(lsExecUnit.io.out.fire()){
           state := s_amo_a; 
-          Debug("[AMO-L] lsExecUnit.io.out.bits %x addr %x src2 %x\n", lsExecUnit.io.out.bits, lsExecUnit.io.in.bits.src1, io.wdata)
+          //Debug("[AMO-L] lsExecUnit.io.out.bits %x addr %x src2 %x\n", lsExecUnit.io.out.bits, lsExecUnit.io.in.bits.src1, io.wdata)
         }
         atomMemReg := lsExecUnit.io.out.bits
         atomRegReg := lsExecUnit.io.out.bits
@@ -208,7 +208,7 @@ class UnpipelinedLSU extends NutCoreModule with HasLSUConst {
         io.out.valid               := false.B
         state := s_amo_s
         atomMemReg := atomALU.io.result
-        Debug("[AMO-A] src1 %x src2 %x res %x\n", atomMemReg, io.wdata, atomALU.io.result)
+        //Debug("[AMO-A] src1 %x src2 %x res %x\n", atomMemReg, io.wdata, atomALU.io.result)
       }
 
       is(s_amo_s){
@@ -222,7 +222,7 @@ class UnpipelinedLSU extends NutCoreModule with HasLSUConst {
         io.out.valid               := lsExecUnit.io.out.fire()
         when(lsExecUnit.io.out.fire()){
           state := s_idle; 
-          Debug("[AMO-S] atomRegReg %x addr %x\n", atomRegReg, lsExecUnit.io.in.bits.src1)
+          //Debug("[AMO-S] atomRegReg %x addr %x\n", atomRegReg, lsExecUnit.io.in.bits.src1)
         }
       }
       is(s_lr){
@@ -236,7 +236,7 @@ class UnpipelinedLSU extends NutCoreModule with HasLSUConst {
         io.out.valid               := lsExecUnit.io.out.fire()
         when(lsExecUnit.io.out.fire()){
           state := s_idle; 
-          Debug("[LR]\n")
+          //Debug("[LR]\n")
         }
       }
       is(s_sc){
@@ -250,7 +250,7 @@ class UnpipelinedLSU extends NutCoreModule with HasLSUConst {
         io.out.valid               := lsExecUnit.io.out.fire()
         when(lsExecUnit.io.out.fire()){
           state := s_idle; 
-          Debug("[SC] \n")
+          //Debug("[SC] \n")
         }
       }
     }
@@ -260,7 +260,7 @@ class UnpipelinedLSU extends NutCoreModule with HasLSUConst {
       io.in.ready := true.B
     }
 
-  Debug(io.out.fire(), "[LSU-AGU] state %x inv %x inr %x\n", state, io.in.valid, io.in.ready)
+  //Debug(io.out.fire(), "[LSU-AGU] state %x inv %x inr %x\n", state, io.in.valid, io.in.ready)
     // controled by FSM 
     // io.in.ready := lsExecUnit.io.in.ready
     // lsExecUnit.io.wdata := io.wdata
@@ -362,9 +362,9 @@ class LSExecUnit extends NutCoreModule {
     is (s_partialLoad) { state := s_idle }
   }
 
-  Debug(dmem.req.fire(), "[LSU] %x, size %x, wdata_raw %x, isStore %x\n", addr, func(1,0), io.wdata, isStore)
-  Debug(dmem.req.fire(), "[LSU] dtlbFinish:%d dtlbEnable:%d dtlbPF:%d state:%d addr:%x dmemReqFire:%d dmemRespFire:%d dmemRdata:%x\n",dtlbFinish, dtlbEnable, dtlbPF, state,  dmem.req.bits.addr, dmem.req.fire(), dmem.resp.fire(), dmem.resp.bits.rdata)
-  Debug(dtlbFinish && dtlbEnable, "[LSU] dtlbFinish:%d dtlbEnable:%d dtlbPF:%d state:%d addr:%x dmemReqFire:%d dmemRespFire:%d dmemRdata:%x\n",dtlbFinish, dtlbEnable, dtlbPF, state,  dmem.req.bits.addr, dmem.req.fire(), dmem.resp.fire(), dmem.resp.bits.rdata)
+  //Debug(dmem.req.fire(), "[LSU] %x, size %x, wdata_raw %x, isStore %x\n", addr, func(1,0), io.wdata, isStore)
+  //Debug(dmem.req.fire(), "[LSU] dtlbFinish:%d dtlbEnable:%d dtlbPF:%d state:%d addr:%x dmemReqFire:%d dmemRespFire:%d dmemRdata:%x\n",dtlbFinish, dtlbEnable, dtlbPF, state,  dmem.req.bits.addr, dmem.req.fire(), dmem.resp.fire(), dmem.resp.bits.rdata)
+  //Debug(dtlbFinish && dtlbEnable, "[LSU] dtlbFinish:%d dtlbEnable:%d dtlbPF:%d state:%d addr:%x dmemReqFire:%d dmemRespFire:%d dmemRdata:%x\n",dtlbFinish, dtlbEnable, dtlbPF, state,  dmem.req.bits.addr, dmem.req.fire(), dmem.resp.fire(), dmem.resp.bits.rdata)
 
   val size = func(1,0)
   val reqAddr  = if (XLEN == 32) SignExt(addr, VAddrBits) else addr(VAddrBits-1,0)
@@ -382,7 +382,7 @@ class LSExecUnit extends NutCoreModule {
   io.out.valid := Mux( dtlbPF && state =/= s_idle || io.loadAddrMisaligned || io.storeAddrMisaligned, true.B, Mux(partialLoad, state === s_partialLoad, dmem.resp.fire() && (state === s_wait_resp)))
   io.in.ready := (state === s_idle) || dtlbPF
 
-  Debug(io.out.fire(), "[LSU-EXECUNIT] state %x dresp %x dpf %x lm %x sm %x\n", state, dmem.resp.fire(), dtlbPF, io.loadAddrMisaligned, io.storeAddrMisaligned)
+  //Debug(io.out.fire(), "[LSU-EXECUNIT] state %x dresp %x dpf %x lm %x sm %x\n", state, dmem.resp.fire(), dtlbPF, io.loadAddrMisaligned, io.storeAddrMisaligned)
 
   val rdata = dmem.resp.bits.rdata
   val rdataLatch = RegNext(rdata)

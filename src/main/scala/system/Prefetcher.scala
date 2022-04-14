@@ -61,8 +61,8 @@ class Prefetcher extends Module with HasPrefetcherParameter {
     getNewReq := !(io.out.fire() || AddressSpace.isMMIO(prefetchReq.addr))
   }
   
-  Debug() {
-    printf("%d: [Prefetcher]: in(%d,%d), out(%d,%d), in.bits.addr = %x\n",
-      GTimer(), io.in.valid, io.in.ready, io.out.valid, io.out.ready, io.in.bits.addr)
-  }
+  //Debug() {
+    //printf("%d: [Prefetcher]: in(%d,%d), out(%d,%d), in.bits.addr = %x\n",
+      //GTimer(), io.in.valid, io.in.ready, io.out.valid, io.out.ready, io.in.bits.addr)
+  //}
 }

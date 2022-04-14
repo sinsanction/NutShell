@@ -98,7 +98,7 @@ class CNNFU extends NutCoreModule {
   val intNumVec = Cat5(isInt1, isInt2, isInt4, isInt8, isInt16)
 
   Debug(valid, "cnn valid: %d, conv: %d, pool: %d, act: %d, loadv-w: %d, loadv-d: %d, loadv-p: %d, cycle: %d\n", valid, isConv, isPool, isAct, isLoadW, isLoadD, isLoadP, GTimer())
-  Debug(valid, "cnn bit: type: %d, int16: %d, int8: %d, int4: %d, int2: %d, int1: %d\n", vtype, isInt16, isInt8, isInt4, isInt2, isInt1)
+  //Debug(valid, "cnn bit: type: %d, int16: %d, int8: %d, int4: %d, int2: %d, int1: %d\n", vtype, isInt16, isInt8, isInt4, isInt2, isInt1)
 
   // state reg
   val s_stage1 :: s_stage2 :: Nil = Enum(2)
@@ -239,7 +239,7 @@ class CNNFU extends NutCoreModule {
   io.loadv.func := Mux(isLoadD || isLoadP, loadv_func, LSUOpType.ld)
   val lv_valid = Mux(isLoadW, lsu_valid, Mux((isLoadD || isLoadP) && vwidth_valid && k_valid, loadv_valid, true.B))
 
-  Debug(valid, "lv_valid: %d, data00: %d, data01: %d, data02: %d, data03: %d, data04: %d, loaddata: %x\n", lv_valid, loadv_data_elem(0), loadv_data_elem(1), loadv_data_elem(2), loadv_data_elem(3), loadv_data_elem(4), lsu_data)
+  //Debug(valid, "lv_valid: %d, data00: %d, data01: %d, data02: %d, data03: %d, data04: %d, loaddata: %x\n", lv_valid, loadv_data_elem(0), loadv_data_elem(1), loadv_data_elem(2), loadv_data_elem(3), loadv_data_elem(4), lsu_data)
 
   vreg_mdu.io.vaddr       := io.vec_addr
   vreg_mdu.io.vtag        := io.vtag
@@ -285,6 +285,6 @@ class CNNFU extends NutCoreModule {
   io.out.bits := Mux(isAct, act_res, Mux(isPool, pool_res, conv_res))
 
   Debug(valid, "out_valid: %d, conv_ok: %d, pool_ok: %d, act_ok: %d\n", io.out.valid, conv_valid, pool_valid, act_valid)
-  Debug(valid, "out_ready: %d, conv_res: %d, pool_res: %d, act_res: %d\n", io.in.ready, conv_res, pool_res, act_res)
-  Debug(valid, "k: %d, main_vwidth: %d, kernel_vwidth: %d\n", io.length_k, vreg_mdu.io.data_main_vwidth, vreg_mdu.io.data_kernel_vwidth)
+  //Debug(valid, "out_ready: %d, conv_res: %d, pool_res: %d, act_res: %d\n", io.in.ready, conv_res, pool_res, act_res)
+  //Debug(valid, "k: %d, main_vwidth: %d, kernel_vwidth: %d\n", io.length_k, vreg_mdu.io.data_main_vwidth, vreg_mdu.io.data_kernel_vwidth)
 }

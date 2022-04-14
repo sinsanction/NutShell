@@ -248,7 +248,7 @@ class CNNConvSub25 extends NutCoreModule {
   io.data_res := Mux(res_final_18(17, 16) === 0.U, res_final_18(15, 0), Mux(res_final_18(17, 16) === 1.U, 65535.U(16.W), 0.U(16.W)))
   io.data_ok := !stage2_valid
 
-  Debug(io.conv_valid, "conv valid: %d, k_vwidth: %d, state: %d, stage2_valid: %d, data_ok: %d, cycle: %d\n", io.conv_valid, io.data_kernel_vwidth, state, stage2_valid, io.data_ok, GTimer())
+  //Debug(io.conv_valid, "conv valid: %d, k_vwidth: %d, state: %d, stage2_valid: %d, data_ok: %d, cycle: %d\n", io.conv_valid, io.data_kernel_vwidth, state, stage2_valid, io.data_ok, GTimer())
 }
 
 class CNNConvIO(length: Int) extends Bundle {
