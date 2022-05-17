@@ -188,7 +188,7 @@ class CNNConvSub25 extends NutCoreModule {
     val data_kernel = Input(Vec(25, UInt(8.W)))
     val data_kernel_vwidth = Input(UInt(4.W))
 
-    val data_res = Output(UInt(16.W))
+    val data_res = Output(UInt(32.W))
     val data_ok = Output(Bool())
   })
 
