@@ -10,8 +10,8 @@ import difftest._
 class BoothEncoderP extends Module {
   val io = IO(new Bundle {
     val y = Input(UInt(3.W))
-    val x = Input(UInt(18.W))
-    val p = Output(UInt(18.W))
+    val x = Input(UInt(32.W))
+    val p = Output(UInt(32.W))
   })
 
   io.p := LookupTree(io.y, List(
@@ -144,25 +144,25 @@ class WallaceTree25 extends Module {
 
 class WallaceAdder extends Module {
   val io = IO(new Bundle {
-    val data = Input(Vec(25, UInt(18.W)))
+    val data = Input(Vec(25, UInt(32.W)))
     val cin = Input(Vec(25, UInt(1.W)))
-    val s = Output(UInt(18.W))
-    val c = Output(UInt(18.W))
+    val s = Output(UInt(32.W))
+    val c = Output(UInt(32.W))
   })
 
-  val wallace_in = Wire(Vec(18, UInt(25.W)))
+  val wallace_in = Wire(Vec(32, UInt(25.W)))
   val wallace_cin = Wire(UInt(24.W))
   wallace_cin := (io.cin.reduce{ (a, b) => Cat(b, a) })(23,0)
-  for(i <- 0 until 18) {
+  for(i <- 0 until 32) {
     //wallace_in(i) := io.data.reduce{ (a, b) => Cat(b(i), a(i)) }
     wallace_in(i) := (io.data.map{ a => a(i).asUInt }).reduce{ (a: UInt, b: UInt) => Cat(b, a) }
   }
 
-  val wallace_tree = VecInit(Seq.fill(18)(Module(new WallaceTree25).io))
-  val out_s = Wire(Vec(18, UInt(1.W)))
-  val out_c = Wire(Vec(18, UInt(1.W)))
+  val wallace_tree = VecInit(Seq.fill(32)(Module(new WallaceTree25).io))
+  val out_s = Wire(Vec(32, UInt(1.W)))
+  val out_c = Wire(Vec(32, UInt(1.W)))
 
-  for(i <- 0 until 18) {
+  for(i <- 0 until 32) {
     if (i == 0) {
         wallace_tree(i).n := wallace_in(i)
         wallace_tree(i).cin := wallace_cin
@@ -194,16 +194,16 @@ class CNNConvSub25 extends NutCoreModule {
 
   // Stage 1
   //Booth
-  val booth_p = WireInit(VecInit.fill(4, 25)(0.U(18.W)))
+  val booth_p = WireInit(VecInit.fill(4, 25)(0.U(32.W)))
   val booth_c = WireInit(VecInit.fill(4, 25)(0.U(1.W)))
   for (i <- 0 until 4) {
     for (j <- 0 until 25) {
       if (i == 0) {
-        booth_p(i)(j) := BoothEncoderP( Cat(io.data_kernel(j)(1, 0), 0.U(1.W)), ZeroExt(io.data_main(j), 18) )
+        booth_p(i)(j) := BoothEncoderP( Cat(io.data_kernel(j)(1, 0), 0.U(1.W)), ZeroExt(io.data_main(j), 32) )
         booth_c(i)(j) := BoothEncoderC( Cat(io.data_kernel(j)(1, 0), 0.U(1.W)) )
       }
       else {
-        booth_p(i)(j) := BoothEncoderP( io.data_kernel(j)(2*i+1, 2*i-1), ZeroExt(io.data_main(j), 18) << (2*i) )
+        booth_p(i)(j) := BoothEncoderP( io.data_kernel(j)(2*i+1, 2*i-1), ZeroExt(io.data_main(j), 32) << (2*i) )
         booth_c(i)(j) := BoothEncoderC( io.data_kernel(j)(2*i+1, 2*i-1) )
       }
     }
@@ -211,8 +211,8 @@ class CNNConvSub25 extends NutCoreModule {
 
   //Wallace
   val wallace_adder = VecInit(Seq.fill(4)(Module(new WallaceAdder).io))
-  val out_s = Wire(Vec(4, UInt(18.W)))
-  val out_c = Wire(Vec(4, UInt(18.W)))
+  val out_s = Wire(Vec(4, UInt(32.W)))
+  val out_c = Wire(Vec(4, UInt(32.W)))
   for(i <- 0 until 4) {
     wallace_adder(i).data := booth_p(i)
     wallace_adder(i).cin  := booth_c(i)
@@ -235,17 +235,17 @@ class CNNConvSub25 extends NutCoreModule {
       state := s_stage1
     }
   }
-  val out_s_reg = RegInit(VecInit(Seq.fill(4)(0.U(18.W))))
-  val out_c_reg = RegInit(VecInit(Seq.fill(4)(0.U(18.W))))
+  val out_s_reg = RegInit(VecInit(Seq.fill(4)(0.U(32.W))))
+  val out_c_reg = RegInit(VecInit(Seq.fill(4)(0.U(32.W))))
   when (stage2_valid) { out_s_reg := out_s }
   when (stage2_valid) { out_c_reg := out_c }
 
   val res_int8 = out_s_reg.reduce(_ + _) + out_c_reg.reduce(_ + _)
   val res_int4 = out_s_reg(0) + out_s_reg(1) + out_c_reg(0) + out_c_reg(1)
 
-  val res_final_18 = Wire(UInt(18.W))
-  res_final_18 := Mux(state === s_stage2, Mux(io.data_kernel_vwidth(3), res_int8, res_int4), res_int21)
-  io.data_res := Mux(res_final_18(17, 16) === 0.U, res_final_18(15, 0), Mux(res_final_18(17, 16) === 1.U, 65535.U(16.W), 0.U(16.W)))
+  val res_final_32 = Wire(UInt(32.W))
+  res_final_32 := Mux(state === s_stage2, Mux(io.data_kernel_vwidth(3), res_int8, res_int4), res_int21)
+  io.data_res := Mux(res_final_32(31, 30) === 0.U, res_final_32(31, 0), Mux(res_final_32(31, 30) === 1.U, res_final_32(31, 0), 0.U(32.W)))
   io.data_ok := !stage2_valid
 
   //Debug(io.conv_valid, "conv valid: %d, k_vwidth: %d, state: %d, stage2_valid: %d, data_ok: %d, cycle: %d\n", io.conv_valid, io.data_kernel_vwidth, state, stage2_valid, io.data_ok, GTimer())
@@ -275,15 +275,15 @@ class CNNConv(length: Int) extends NutCoreModule {
   conv_mdu.io.data_kernel_vwidth := io.data_kernel_vwidth
 
   val res = conv_mdu.io.data_res
-  val res2 = Wire(UInt(16.W))
+  //val res2 = Wire(UInt(16.W))
 
-  res2 := LookupTreeDefault(io.data_main_vwidth, 0.U(16.W), List(
-    "b1000".U  -> res,
-    "b0100".U  -> Mux(res > 255.U(16.W), 255.U(16.W), res),
-    "b0010".U  -> Mux(res > 15.U(16.W), 15.U(16.W), res),
-    "b0001".U  -> Mux(res > 3.U(16.W), 3.U(16.W), res)
-  ))
+  //res2 := LookupTreeDefault(io.data_main_vwidth, 0.U(16.W), List(
+  //  "b1000".U  -> res,
+  //  "b0100".U  -> Mux(res > 255.U(16.W), 255.U(16.W), res),
+  //  "b0010".U  -> Mux(res > 15.U(16.W), 15.U(16.W), res),
+  //  "b0001".U  -> Mux(res > 3.U(16.W), 3.U(16.W), res)
+  //))
 
-  io.conv_res := Cat(0.U(48.W), res2)
+  io.conv_res := Cat(0.U(32.W), res)
   io.conv_ok := conv_mdu.io.data_ok
 }
