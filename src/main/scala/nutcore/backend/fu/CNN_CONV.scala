@@ -245,7 +245,7 @@ class CNNConvSub25 extends NutCoreModule {
 
   val res_final_32 = Wire(UInt(32.W))
   res_final_32 := Mux(state === s_stage2, Mux(io.data_kernel_vwidth(3), res_int8, res_int4), res_int21)
-  io.data_res := Mux(res_final_32(31, 30) === 0.U, res_final_32(31, 0), Mux(res_final_32(31, 30) === 1.U, res_final_32(31, 0), 0.U(32.W)))
+  io.data_res := res_final_32//Mux(res_final_32(31, 30) === 0.U, res_final_32(31, 0), Mux(res_final_32(31, 30) === 1.U, res_final_32(31, 0), 0.U(32.W)))
   io.data_ok := !stage2_valid
 
   //Debug(io.conv_valid, "conv valid: %d, k_vwidth: %d, state: %d, stage2_valid: %d, data_ok: %d, cycle: %d\n", io.conv_valid, io.data_kernel_vwidth, state, stage2_valid, io.data_ok, GTimer())
