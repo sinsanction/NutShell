@@ -80,13 +80,13 @@ class CNNPool(length: Int) extends NutCoreModule {
     "b10".U  -> pool_avg_mdu.io.data_res
   ))
 
-  val res2 = Wire(UInt(16.W))
-  res2 := LookupTreeDefault(io.data_vwidth, 0.U(16.W), List(
-    "b1000".U  -> res,
-    "b0100".U  -> Mux(res > 255.U(16.W), 255.U(16.W), res),
-    "b0010".U  -> Mux(res > 15.U(16.W), 15.U(16.W), res),
-    "b0001".U  -> Mux(res > 3.U(16.W), 3.U(16.W), res)
-  ))
-  io.pool_res := Cat(0.U(48.W), res2)
+  //val res2 = Wire(UInt(16.W))
+  //res2 := LookupTreeDefault(io.data_vwidth, 0.U(16.W), List(
+    //"b1000".U  -> res,
+    //"b0100".U  -> Mux(res > 255.U(16.W), 255.U(16.W), res),
+    //"b0010".U  -> Mux(res > 15.U(16.W), 15.U(16.W), res),
+    //"b0001".U  -> Mux(res > 3.U(16.W), 3.U(16.W), res)
+  //))
+  io.pool_res := Cat(0.U(48.W), res)
   io.pool_ok := true.B
 }
